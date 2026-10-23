@@ -10,7 +10,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   return (
-    <div className="flex min-h-screen bg-[#090B0E] text-slate-100">
+    <div suppressHydrationWarning className="flex min-h-screen bg-[#090B0E] text-slate-100">
       <Navigation onOpenNewRun={() => setIsNewRunOpen(true)} />
       <main className="flex-1 min-w-0 overflow-y-auto">
         {children}

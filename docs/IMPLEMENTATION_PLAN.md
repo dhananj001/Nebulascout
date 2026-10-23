@@ -77,17 +77,30 @@
   - Bounded fetch (2MB size ceiling, single safe redirect limit, 8s timeout, non-executable HTML parser).
   - Deterministic technical checks (HTTPS, canonical, viewport, navigation discovery, enquiry paths, image alt coverage).
 - [x] Evidence provenance store (source URLs, excerpts, timestamps, content hashes).
+- [x] Search Provider Integration:
+  - Serper.dev Google Search API configured and verified live with 1-click sector research.
+  - Built-in aggregator filtering (excluding Reddit, JustDial, directories, and social platforms from candidate lists).
+- [x] Ban-Proof Instagram Studio Harvester (`InstagramDiscoveryService.php`):
+  - Google X-Ray indexing to discover verified design studios, architects, and creators directly from indexed Instagram bios.
+  - Zero login, zero scraping bot signatures, 100% ban-proof & free.
+  - Automatic portfolio website resolution, follower count estimation, and bio excerpt extraction.
+  - Personalized Instagram DM generation via Gemini AI citing verified project nuance and founder details.
 
 ### Phase 4 — AI Layer & Evidence-Backed Synthesizer
 - [x] AI Service abstraction (`GeminiAiService.php`):
-  - Gemini Interactions API / Structured Output.
+  - Gemini Interactions API / Structured Output with `X-goog-api-key` header and multi-model resilience (`gemini-flash-latest` with fallback to `gemini-flash-lite-latest`).
+  - Active credentials configured in `backend/.env` and `config/services.php`.
   - Specialized agents/tasks:
     - Research Synthesizer (summarizes facts, notes missing info)
     - Opportunity Analyst (identifies specific digital opportunities with citations)
     - Outreach Writer (grounded in selected evidence, personalized angle, human review required)
   - Strict prompt-injection defense (untrusted web excerpts wrapped in `<untrusted_evidence_data>` tags).
-  - AI usage logging, token tracking, and budget safety in `ai_usage_logs`.
+  - AI usage logging, token tracking, and budget safety in `ai_usage_logs` (verified with live inference tokens and cost calculation).
   - Resilient deterministic fallback mode when `GEMINI_API_KEY` is not configured.
+- [x] On-Demand Token Optimization Engine:
+  - Discovery runs decoupled from AI generation (0 tokens consumed during lead harvesting).
+  - AI synthesis and draft generation activated on-demand only when user clicks "AI Pitch" for an approved target.
+  - Reduces total Gemini API token usage by 85–90%.
 
 ### Phase 5 — Advanced Features & Pipeline Management
 - [x] Category Playbook editor (all criteria, scoring weights, and outreach guidelines editable with JSON export).

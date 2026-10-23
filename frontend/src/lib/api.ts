@@ -325,6 +325,7 @@ export const api = {
     manual_url?: string;
     business_name?: string;
     instagram_handle?: string;
+    source_type?: 'instagram' | 'google' | 'all' | 'manual';
   }) => request<ResearchRun>('/research-runs', {
     method: 'POST',
     body: JSON.stringify(data),

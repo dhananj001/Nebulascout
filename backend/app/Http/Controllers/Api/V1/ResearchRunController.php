@@ -41,6 +41,7 @@ class ResearchRunController extends Controller
             'manual_url' => 'nullable|string|max:500',
             'business_name' => 'nullable|string|max:255',
             'instagram_handle' => 'nullable|string|max:100',
+            'source_type' => 'nullable|string|in:instagram,google,all,manual',
         ]);
 
         try {

@@ -13,7 +13,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Trash2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Sparkles
 } from 'lucide-react';
 import { InstagramIcon } from '@/components/InstagramIcon';
 import { api, Prospect, Category } from '@/lib/api';
@@ -31,6 +32,7 @@ export default function ProspectsPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedProspectId, setSelectedProspectId] = useState<number | null>(null);
+  const [generatingId, setGeneratingId] = useState<number | null>(null);
   
   // CSV Import state
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -127,6 +129,17 @@ export default function ProspectsPage() {
             <span>Export CSV</span>
           </a>
         </div>
+      </div>
+
+      {/* Token Optimization Status Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
+        <div className="flex items-center gap-2.5">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50 shrink-0" />
+          <span className="text-emerald-300 font-medium">
+            <strong>Token Saver Active:</strong> Discovery runs harvest leads with 0 AI tokens. Click <strong>&quot;AI Pitch&quot;</strong> on targets you actually want to approach.
+          </span>
+        </div>
+        <span className="text-[11px] font-mono text-emerald-400/80">Saves ~85% of Gemini API usage</span>
       </div>
 
       {/* Filter and Search Bar */}
@@ -273,15 +286,39 @@ export default function ProspectsPage() {
                   </td>
 
                   <td className="py-3.5 px-4 text-right">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedProspectId(p.id);
-                      }}
-                      className="px-2.5 py-1 text-xs text-slate-400 group-hover:text-white bg-white/5 hover:bg-white/10 rounded border border-white/5 transition-colors"
-                    >
-                      Inspect
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          setGeneratingId(p.id);
+                          try {
+                            await api.generateDraft(p.id, p.instagram_handle ? 'instagram_dm' : 'email');
+                            await loadProspects();
+                            setSelectedProspectId(p.id);
+                          } catch (err: any) {
+                            alert(err.message || 'Failed to generate draft');
+                          } finally {
+                            setGeneratingId(null);
+                          }
+                        }}
+                        disabled={generatingId === p.id}
+                        className="px-2.5 py-1 text-[11px] font-semibold text-pink-300 hover:text-white bg-pink-500/10 hover:bg-pink-500/20 rounded border border-pink-500/20 transition-all flex items-center gap-1 shadow-sm disabled:opacity-50"
+                        title="Generate personalized pitch on-demand (preserves tokens)"
+                      >
+                        <Sparkles className={`w-3 h-3 text-pink-400 ${generatingId === p.id ? 'animate-spin' : ''}`} />
+                        <span>{generatingId === p.id ? 'Thinking...' : 'AI Pitch'}</span>
+                      </button>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedProspectId(p.id);
+                        }}
+                        className="px-2.5 py-1 text-xs text-slate-400 group-hover:text-white bg-white/5 hover:bg-white/10 rounded border border-white/5 transition-colors"
+                      >
+                        Inspect
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

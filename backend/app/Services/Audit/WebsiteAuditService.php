@@ -132,7 +132,7 @@ class WebsiteAuditService
     {
         $libxmlState = libxml_use_internal_errors(true);
         $dom = new DOMDocument();
-        $dom->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'), LIBXML_NONET | LIBXML_NOWARNING | LIBXML_NOERROR);
+        $dom->loadHTML('<?xml encoding="utf-8" ?>' . $html, LIBXML_NONET | LIBXML_NOWARNING | LIBXML_NOERROR);
         libxml_clear_errors();
         libxml_use_internal_errors($libxmlState);
 

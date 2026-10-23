@@ -45,15 +45,15 @@ class HealthController extends Controller
             'ai' => $this->aiService->getStatus(),
             'search' => [
                 'brave_search' => [
-                    'configured' => ! empty(env('BRAVE_SEARCH_API_KEY')),
+                    'configured' => ! empty(config('services.brave.key', env('BRAVE_SEARCH_API_KEY'))),
                     'required_env' => 'BRAVE_SEARCH_API_KEY',
                 ],
                 'serper' => [
-                    'configured' => ! empty(env('SERPER_API_KEY')),
+                    'configured' => ! empty(config('services.serper.key', env('SERPER_API_KEY'))),
                     'required_env' => 'SERPER_API_KEY',
                 ],
                 'google_places' => [
-                    'configured' => ! empty(env('GOOGLE_PLACES_API_KEY')),
+                    'configured' => ! empty(config('services.google_places.key', env('GOOGLE_PLACES_API_KEY'))),
                     'required_env' => 'GOOGLE_PLACES_API_KEY',
                 ],
             ],

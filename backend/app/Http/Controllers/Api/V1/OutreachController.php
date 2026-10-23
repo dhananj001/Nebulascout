@@ -27,8 +27,22 @@ class OutreachController extends Controller
         $channel = $request->input('channel', 'instagram_dm');
 
         try {
+            // On-Demand AI Activation:
+            // If this prospect hasn't been synthesized by AI yet, run synthesis now (saving tokens on unselected prospects)
+            if ($prospect->observations()->count() === 0) {
+                $this->aiService->synthesizeResearch($prospect);
+            }
+            if ($prospect->opportunities()->count() === 0) {
+                $this->aiService->analyzeOpportunities($prospect);
+            }
+
             $draft = $this->aiService->generateOutreachDraft($prospect, $channel);
-            $prospect->recordActivity('draft_generated', "New {$channel} outreach draft generated (Version {$draft->version}).", [
+
+            if ($prospect->stage === 'needs_review') {
+                $prospect->update(['stage' => 'ready_for_outreach']);
+            }
+
+            $prospect->recordActivity('draft_generated', "On-demand {$channel} outreach draft generated (Version {$draft->version}).", [
                 'channel' => $channel,
                 'draft_id' => $draft->id,
             ]);

@@ -20,7 +20,7 @@ class GeminiAiService
     public function __construct()
     {
         $this->apiKey = config('services.gemini.key', env('GEMINI_API_KEY'));
-        $this->model = config('services.gemini.model', env('GEMINI_MODEL', 'gemini-2.5-flash'));
+        $this->model = config('services.gemini.model', env('GEMINI_MODEL', 'gemini-flash-latest'));
         $this->endpoint = "https://generativelanguage.googleapis.com/v1beta/models/{$this->model}:generateContent";
     }
 
@@ -296,8 +296,6 @@ PROMPT;
      */
     protected function callGemini(string $systemPrompt, string $userPrompt, string $taskType, float $startTime): array
     {
-        $url = "{$this->endpoint}?key={$this->apiKey}";
-
         $payload = [
             'contents' => [
                 [
@@ -313,44 +311,67 @@ PROMPT;
             ],
         ];
 
-        $response = Http::timeout(25)->post($url, $payload);
-        $durationMs = (int) round((microtime(true) - $startTime) * 1000);
+        // Attempt primary configured model first, gracefully trying flash-lite if upstream experiences temporary demand spikes
+        $modelsToTry = array_unique([$this->model, 'gemini-flash-lite-latest']);
+        $lastException = null;
 
-        if (! $response->successful()) {
-            AiUsageLog::create([
-                'task_type' => $taskType,
-                'provider' => 'gemini',
-                'model' => $this->model,
-                'duration_ms' => $durationMs,
-                'status' => 'error',
-                'error_message' => $response->body(),
-            ]);
-            throw new Exception("Gemini API error ({$response->status()}): " . $response->body());
+        foreach ($modelsToTry as $candidateModel) {
+            $endpoint = "https://generativelanguage.googleapis.com/v1beta/models/{$candidateModel}:generateContent";
+            try {
+                $response = Http::timeout(15)
+                    ->withHeaders([
+                        'X-goog-api-key' => $this->apiKey,
+                        'Content-Type' => 'application/json',
+                    ])
+                    ->post($endpoint, $payload);
+
+                $durationMs = (int) round((microtime(true) - $startTime) * 1000);
+
+                if (! $response->successful()) {
+                    Log::warning("Gemini model {$candidateModel} returned {$response->status()}: " . $response->body());
+                    continue;
+                }
+
+                $data = $response->json();
+                $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? '{}';
+                $text = preg_replace('/^```(?:json)?\s*/i', '', trim($text));
+                $text = preg_replace('/\s*```$/', '', $text);
+                $json = json_decode($text, true) ?: [];
+
+                $usage = $data['usageMetadata'] ?? [];
+                $promptTokens = $usage['promptTokenCount'] ?? 0;
+                $completionTokens = $usage['candidatesTokenCount'] ?? 0;
+                $cost = ($promptTokens * 0.000000075) + ($completionTokens * 0.0000003);
+
+                AiUsageLog::create([
+                    'task_type' => $taskType,
+                    'provider' => 'gemini',
+                    'model' => $candidateModel,
+                    'prompt_tokens' => $promptTokens,
+                    'completion_tokens' => $completionTokens,
+                    'estimated_cost' => $cost,
+                    'duration_ms' => $durationMs,
+                    'status' => 'success',
+                ]);
+
+                return $json;
+            } catch (Exception $e) {
+                Log::warning("Gemini model {$candidateModel} attempt failed: " . $e->getMessage());
+                $lastException = $e;
+            }
         }
 
-        $data = $response->json();
-        $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? '{}';
-        $json = json_decode($text, true) ?: [];
-
-        $usage = $data['usageMetadata'] ?? [];
-        $promptTokens = $usage['promptTokenCount'] ?? 0;
-        $completionTokens = $usage['candidatesTokenCount'] ?? 0;
-
-        // Estimated cost (Gemini 2.5 Flash: ~$0.075 / 1M input, ~$0.30 / 1M output)
-        $cost = ($promptTokens * 0.000000075) + ($completionTokens * 0.0000003);
-
+        $durationMs = (int) round((microtime(true) - $startTime) * 1000);
         AiUsageLog::create([
             'task_type' => $taskType,
             'provider' => 'gemini',
             'model' => $this->model,
-            'prompt_tokens' => $promptTokens,
-            'completion_tokens' => $completionTokens,
-            'estimated_cost' => $cost,
             'duration_ms' => $durationMs,
-            'status' => 'success',
+            'status' => 'error',
+            'error_message' => $lastException ? $lastException->getMessage() : 'All Gemini models unavailable',
         ]);
 
-        return $json;
+        throw ($lastException ?: new Exception('Gemini API call failed across available models'));
     }
 
     /**
