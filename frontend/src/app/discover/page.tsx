@@ -20,15 +20,12 @@ import {
   Key,
   ShieldCheck,
   ArrowRight,
-  Info,
   Check,
   Copy,
   ChevronDown,
-  ChevronUp,
-  Sliders,
-  Users
+  ChevronUp
 } from 'lucide-react';
-import { api, Category, CategoryPlaybook } from '@/lib/api';
+import { api, Category } from '@/lib/api';
 import { InstagramIcon } from '@/components/InstagramIcon';
 
 export default function DiscoverPage() {
@@ -46,6 +43,13 @@ export default function DiscoverPage() {
   const [providersStatus, setProvidersStatus] = useState<any>(null);
   const [showKeyInstructions, setShowKeyInstructions] = useState(false);
   const [copiedKeyEnv, setCopiedKeyEnv] = useState(false);
+
+  // Harvest Live Progress State
+  const [isHarvesting, setIsHarvesting] = useState(false);
+  const [harvestStage, setHarvestStage] = useState<string>('Initializing');
+  const [harvestProgress, setHarvestProgress] = useState<number>(0);
+  const [harvestLogs, setHarvestLogs] = useState<Array<{ time: string; text: string; type?: 'info' | 'success' | 'detail' }>>([]);
+  const [completedRun, setCompletedRun] = useState<any | null>(null);
 
   useEffect(() => {
     api.getCategories().then((cats) => {
@@ -65,9 +69,13 @@ export default function DiscoverPage() {
   const allPlaybooks = categories.flatMap((c) => c.playbooks || []);
   const selectedPlaybook = allPlaybooks.find((p) => p.id === Number(selectedPlaybookId));
 
+  const addLog = (text: string, type: 'info' | 'success' | 'detail' = 'info') => {
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    setHarvestLogs(prev => [...prev, { time, text, type }]);
+  };
+
   const handleLaunch = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     setError(null);
 
     try {
@@ -75,7 +83,34 @@ export default function DiscoverPage() {
         throw new Error('Please enter a target website URL or Instagram profile to audit.');
       }
 
-      const res = await api.createResearchRun({
+      setIsHarvesting(true);
+      setHarvestProgress(15);
+      setHarvestStage('Initiating Search & Query Indexing');
+      setHarvestLogs([]);
+      setCompletedRun(null);
+
+      const targetCity = locationQuery.trim() || 'Global';
+      const targetNiche = selectedPlaybook?.name || 'Design Studio';
+
+      addLog(`Selected Niche: "${targetNiche}" in ${targetCity}`);
+      if (activeWorkflow === 'instagram_leads') {
+        addLog(`Constructing Google X-Ray query: site:instagram.com "${targetNiche}" "${targetCity}"`, 'detail');
+        addLog(`Targeting 0-AI-token discovery to preserve budget`, 'info');
+      } else if (activeWorkflow === 'direct_url') {
+        addLog(`Inspecting candidate URL: ${manualUrl}`, 'detail');
+      }
+
+      // Step 2: Call Backend
+      setTimeout(() => {
+        setHarvestProgress(45);
+        setHarvestStage(activeWorkflow === 'instagram_leads' ? 'Scanning Public Instagram Profiles via Serper' : 'Executing SSRF Web Audit');
+        if (activeWorkflow === 'instagram_leads') {
+          addLog(`Sending query to Google Serper search API...`);
+          addLog(`Filtering out aggregator spam and irrelevant directory listings`, 'detail');
+        }
+      }, 700);
+
+      const run = await api.createResearchRun({
         category_playbook_id: selectedPlaybook ? selectedPlaybook.id : null,
         category_name: selectedPlaybook?.name,
         location_query: locationQuery,
@@ -86,11 +121,26 @@ export default function DiscoverPage() {
         instagram_handle: instagramHandle.trim() || undefined,
       });
 
-      router.push('/runs');
+      // Step 3: Parse Execution Logs
+      setHarvestProgress(80);
+      setHarvestStage('Auditing Bios, Handles & Deduplicating');
+
+      if (run.execution_log && run.execution_log.length > 0) {
+        run.execution_log.forEach((entry: any) => {
+          addLog(entry.message, entry.message.includes('Created') || entry.message.includes('verified') ? 'success' : 'detail');
+        });
+      }
+
+      // Step 4: Finished
+      setHarvestProgress(100);
+      setHarvestStage('Harvest Complete');
+      addLog(`Harvest completed successfully! Found ${run.candidates_found} candidates, created ${run.prospects_created} new prospects.`, 'success');
+      setCompletedRun(run);
+
     } catch (err: any) {
       setError(err.message || 'Failed to start research run');
-    } finally {
-      setIsSubmitting(false);
+      addLog(`Error: ${err.message || 'Failed to execute run'}`, 'detail');
+      setIsHarvesting(false);
     }
   };
 
@@ -135,283 +185,198 @@ export default function DiscoverPage() {
   const hasGeminiKey = providersStatus?.ai?.has_api_key;
 
   return (
-    <div className="p-8 max-w-5xl mx-auto space-y-8">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+    <div className="py-10 px-8 max-w-4xl mx-auto space-y-9">
+      {/* Editorial Apple Header */}
+      <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-4 border-b border-black/[0.06] dark:border-white/[0.08] pb-6">
+        <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-amber-400" />
-              <span>Prospect Discovery & Instagram Harvester</span>
+            <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-white">
+              Studio Discovery
             </h1>
-            <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              Live & Ready
+            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              Live
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Discover verified Instagram studio profiles, audit their bio websites, and generate evidence-grounded DMs.
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-xl leading-relaxed">
+            Discover verified Instagram studio portfolios, audit live websites for redesign hooks, and draft tailored outreach.
           </p>
         </div>
 
         {/* API Status Drawer Toggle */}
         <button
           onClick={() => setShowKeyInstructions(!showKeyInstructions)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#121620] hover:bg-white/10 text-xs font-mono border border-white/10 transition-colors"
+          className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.1] text-xs font-medium text-neutral-700 dark:text-neutral-300 transition-colors"
         >
-          <Key className="w-3.5 h-3.5 text-amber-400" />
-          <span className="text-slate-300">API Status & Keys</span>
-          {showKeyInstructions ? <ChevronUp className="w-3 h-3 text-slate-400" /> : <ChevronDown className="w-3 h-3 text-slate-400" />}
+          <Key className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
+          <span>Services</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          {showKeyInstructions ? <ChevronUp className="w-3.5 h-3.5 text-neutral-400" /> : <ChevronDown className="w-3.5 h-3.5 text-neutral-400" />}
         </button>
       </div>
 
-      {/* Live Provider Diagnostics Banner */}
-      <div className="p-4 rounded-xl bg-[#121620] border border-white/10 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-4">
-            {/* Instagram Engine Status */}
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-pink-400 shadow-sm shadow-pink-400/50" />
-              <span className="text-slate-300 font-medium">Instagram Lead Finder:</span>
-              <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-300 border border-pink-500/20">
-                100% Free & Ban-Proof (Active)
-              </span>
-            </div>
-
-            {/* Gemini Status */}
-            <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${hasGeminiKey ? 'bg-emerald-400 shadow-sm shadow-emerald-400/50' : 'bg-amber-400'}`} />
-              <span className="text-slate-300 font-medium">Gemini AI:</span>
-              <span className={`font-mono text-[11px] px-1.5 py-0.5 rounded ${hasGeminiKey ? 'bg-emerald-500/10 text-emerald-300' : 'bg-amber-500/10 text-amber-300'}`}>
-                {hasGeminiKey ? 'Connected (Live Model)' : 'Deterministic Fallback'}
-              </span>
-            </div>
-
-            {/* Search Provider Status */}
-            <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${hasSearchKey ? 'bg-emerald-400' : 'bg-slate-500'}`} />
-              <span className="text-slate-300 font-medium">Serper Google API:</span>
-              <span className={`font-mono text-[11px] px-1.5 py-0.5 rounded ${hasSearchKey ? 'bg-emerald-500/10 text-emerald-300' : 'bg-white/5 text-slate-400'}`}>
-                {hasSearchKey ? 'Configured & Verified' : 'Missing'}
-              </span>
-            </div>
+      {/* Expandable Provider Diagnostic Card */}
+      {showKeyInstructions && (
+        <div className="p-5 rounded-2xl bg-white dark:bg-[#141416] border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-4 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-neutral-900 dark:text-white">Connected Engines</span>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(`GEMINI_API_KEY=\nSERPER_API_KEY=`);
+                setCopiedKeyEnv(true);
+                setTimeout(() => setCopiedKeyEnv(false), 2000);
+              }}
+              className="text-[11px] text-[#0071E3] dark:text-[#2997FF] hover:underline flex items-center gap-1"
+            >
+              {copiedKeyEnv ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+              <span>{copiedKeyEnv ? 'Copied template' : 'Copy .env snippet'}</span>
+            </button>
           </div>
 
-          <span className="text-[11px] text-slate-400 font-mono">
-            {hasGeminiKey && hasSearchKey ? 'All live engines ready' : 'Configure keys in .env'}
-          </span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+            <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-white/[0.03] border border-black/[0.04] dark:border-white/[0.04] space-y-1">
+              <div className="flex items-center justify-between font-medium">
+                <span className="text-neutral-800 dark:text-neutral-200">Serper Search Engine</span>
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400">
+                  {hasSearchKey ? 'Verified' : 'Inactive'}
+                </span>
+              </div>
+              <p className="text-neutral-500 dark:text-neutral-400 text-[11px] leading-relaxed">
+                Powers 100% ban-proof Google X-Ray discovery for active Instagram studio profiles.
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-white/[0.03] border border-black/[0.04] dark:border-white/[0.04] space-y-1">
+              <div className="flex items-center justify-between font-medium">
+                <span className="text-neutral-800 dark:text-neutral-200">Google Gemini AI</span>
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400">
+                  {hasGeminiKey ? 'Verified (Flash)' : 'Inactive'}
+                </span>
+              </div>
+              <p className="text-neutral-500 dark:text-neutral-400 text-[11px] leading-relaxed">
+                Generates personalized client dossier angles and tailored Instagram DM pitches on demand.
+              </p>
+            </div>
+          </div>
         </div>
-
-        {/* Expandable Setup Instructions */}
-        {showKeyInstructions && (
-          <div className="mt-3 pt-3 border-t border-white/10 space-y-3 text-xs animate-in fade-in duration-150">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-white">Configured Intelligence Providers</span>
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(`GEMINI_API_KEY=\nSERPER_API_KEY=`);
-                  setCopiedKeyEnv(true);
-                  setTimeout(() => setCopiedKeyEnv(false), 2000);
-                }}
-                className="text-[11px] text-amber-400 hover:text-amber-300 flex items-center gap-1 font-mono"
-              >
-                {copiedKeyEnv ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                <span>{copiedKeyEnv ? 'Copied template!' : 'Copy .env format'}</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="p-3 rounded-lg bg-[#0B0D12] border border-white/5 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-amber-300">1. Google Gemini AI</span>
-                  <span className="font-mono text-[10px] text-emerald-400">Connected</span>
-                </div>
-                <p className="text-slate-400 leading-relaxed">
-                  Generates grounded research observations, website redesign angles, and Instagram DM copy.
-                </p>
-                <p className="text-slate-500 font-mono text-[10px]">Active in backend/.env &rarr; GEMINI_MODEL=gemini-flash-latest</p>
-              </div>
-
-              <div className="p-3 rounded-lg bg-[#0B0D12] border border-white/5 space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-amber-300">2. Serper Google Search</span>
-                  <span className="font-mono text-[10px] text-emerald-400">Connected</span>
-                </div>
-                <p className="text-slate-400 leading-relaxed">
-                  Powers the 100% ban-proof Instagram lead discovery using Google X-Ray indexing.
-                </p>
-                <p className="text-slate-500 font-mono text-[10px]">Active in backend/.env &rarr; SERPER_API_KEY=f28c7c...</p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       {error && (
-        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2.5">
-          <AlertCircle className="w-4 h-4 shrink-0" />
+        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300 text-xs flex items-center gap-2.5">
+          <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* 3 WORKFLOW SWITCHER TABS */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* TAB 1: INSTAGRAM STUDIO HARVESTER (PRIMARY) */}
-        <div
+      {/* Apple-style Segmented Control for Workflows */}
+      <div className="p-1 rounded-2xl bg-neutral-200/60 dark:bg-white/[0.06] flex items-center gap-1 max-w-xl">
+        <button
+          type="button"
           onClick={() => setActiveWorkflow('instagram_leads')}
-          className={`p-5 rounded-xl border cursor-pointer transition-all space-y-2 relative overflow-hidden ${
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
             activeWorkflow === 'instagram_leads'
-              ? 'border-pink-500/80 bg-gradient-to-b from-[#18111e] to-[#121620] shadow-lg shadow-pink-500/10'
-              : 'border-white/10 bg-[#0B0D12] hover:border-white/20'
+              ? 'bg-white dark:bg-[#1E1E22] text-neutral-900 dark:text-white shadow-sm'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
           }`}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={`p-2 rounded-lg ${activeWorkflow === 'instagram_leads' ? 'bg-gradient-to-br from-pink-500/30 to-purple-500/30 text-pink-400' : 'bg-white/5 text-slate-400'}`}>
-                <InstagramIcon className="w-5 h-5 text-pink-400" />
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <h3 className="text-sm font-bold text-white">Instagram Studio Harvester</h3>
-                </div>
-                <span className="text-[10px] font-mono text-pink-400 font-semibold">100% Free · Ban-Proof · Targeted</span>
-              </div>
-            </div>
-            {activeWorkflow === 'instagram_leads' && <CheckCircle2 className="w-5 h-5 text-pink-400" />}
-          </div>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Find active design studios, architects, and creators by niche & city. Pulls handles, followers, bio links, and generates tailored Instagram DMs.
-          </p>
-        </div>
+          <InstagramIcon className="w-3.5 h-3.5 text-[#E1306C]" />
+          <span>Instagram Harvester</span>
+        </button>
 
-        {/* TAB 2: DIRECT CANDIDATE AUDIT */}
-        <div
+        <button
+          type="button"
           onClick={() => setActiveWorkflow('direct_url')}
-          className={`p-5 rounded-xl border cursor-pointer transition-all space-y-2 ${
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
             activeWorkflow === 'direct_url'
-              ? 'border-amber-500 bg-[#121620] shadow-lg shadow-amber-500/5'
-              : 'border-white/10 bg-[#0B0D12] hover:border-white/20'
+              ? 'bg-white dark:bg-[#1E1E22] text-neutral-900 dark:text-white shadow-sm'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
           }`}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={`p-2 rounded-lg ${activeWorkflow === 'direct_url' ? 'bg-amber-500/20 text-amber-400' : 'bg-white/5 text-slate-400'}`}>
-                <Globe className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-white">Direct URL Deep Audit</h3>
-                <span className="text-[10px] font-mono text-emerald-400">Instant URL / Profile Inspection</span>
-              </div>
-            </div>
-            {activeWorkflow === 'direct_url' && <CheckCircle2 className="w-5 h-5 text-amber-400" />}
-          </div>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Paste any specific client URL or Instagram profile directly to execute an instant SSRF audit and generate a pitch dossier.
-          </p>
-        </div>
+          <Globe className="w-3.5 h-3.5 text-neutral-500" />
+          <span>Direct URL Audit</span>
+        </button>
 
-        {/* TAB 3: SECTOR BATCH SEARCH */}
-        <div
+        <button
+          type="button"
           onClick={() => setActiveWorkflow('sector_search')}
-          className={`p-5 rounded-xl border cursor-pointer transition-all space-y-2 ${
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-medium transition-all flex items-center justify-center gap-1.5 ${
             activeWorkflow === 'sector_search'
-              ? 'border-amber-500 bg-[#121620] shadow-lg shadow-amber-500/5'
-              : 'border-white/10 bg-[#0B0D12] hover:border-white/20'
+              ? 'bg-white dark:bg-[#1E1E22] text-neutral-900 dark:text-white shadow-sm'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
           }`}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={`p-2 rounded-lg ${activeWorkflow === 'sector_search' ? 'bg-amber-500/20 text-amber-400' : 'bg-white/5 text-slate-400'}`}>
-                <Search className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-white">Google Web Search</h3>
-                <span className="text-[10px] font-mono text-slate-400">General Domain Crawling</span>
-              </div>
-            </div>
-            {activeWorkflow === 'sector_search' && <CheckCircle2 className="w-5 h-5 text-amber-400" />}
-          </div>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Broad web-wide search across business domains, directories, and agency websites by city and sector.
-          </p>
-        </div>
+          <Search className="w-3.5 h-3.5 text-neutral-500" />
+          <span>Web Search</span>
+        </button>
       </div>
 
       {/* Main Execution Form */}
       <form onSubmit={handleLaunch} className="space-y-6">
 
-        {/* WORKFLOW 1: INSTAGRAM STUDIO HARVESTER (PRIMARY) */}
+        {/* WORKFLOW 1: INSTAGRAM HARVESTER */}
         {activeWorkflow === 'instagram_leads' && (
-          <div className="p-6 rounded-xl bg-gradient-to-b from-[#14101a] to-[#121620] border border-pink-500/30 space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <InstagramIcon className="w-4 h-4 text-pink-400" />
-                <span className="text-xs font-semibold text-white uppercase tracking-wider">
-                  Target Instagram Niche & Geography
-                </span>
-              </div>
-              <span className="text-[11px] font-mono text-pink-400 bg-pink-500/10 px-2 py-0.5 rounded border border-pink-500/20">
-                Google X-Ray · Zero Account Ban Risk
+          <div className="p-6 rounded-2xl bg-white dark:bg-[#141416] border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-6">
+            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
+              <span className="text-xs font-semibold text-neutral-900 dark:text-white tracking-tight">
+                Target Studio Category
+              </span>
+              <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+                0 AI Tokens Discovery
               </span>
             </div>
 
-            {/* Category selection */}
-            <div className="space-y-3">
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                1. Select Target Design / Studio Niche
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {categories.map((cat) => {
-                  const Icon = getCategoryIcon(cat.icon);
-                  const defaultPlaybook = cat.playbooks?.[0];
-                  const isSelected = selectedPlaybookId === defaultPlaybook?.id;
+            {/* Category selection - Apple style tiles */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {categories.map((cat) => {
+                const Icon = getCategoryIcon(cat.icon);
+                const defaultPlaybook = cat.playbooks?.[0];
+                const isSelected = selectedPlaybookId === defaultPlaybook?.id;
 
-                  return (
-                    <div
-                      key={cat.id}
-                      onClick={() => {
-                        if (defaultPlaybook) {
-                          setSelectedPlaybookId(defaultPlaybook.id);
-                          if (defaultPlaybook.default_geography) {
-                            setLocationQuery(defaultPlaybook.default_geography.split(',')[0]);
-                          }
+                return (
+                  <div
+                    key={cat.id}
+                    onClick={() => {
+                      if (defaultPlaybook) {
+                        setSelectedPlaybookId(defaultPlaybook.id);
+                        if (defaultPlaybook.default_geography) {
+                          setLocationQuery(defaultPlaybook.default_geography.split(',')[0]);
                         }
-                      }}
-                      className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
-                        isSelected
-                          ? 'border-pink-500 bg-pink-500/10 text-white shadow-md'
-                          : 'border-white/10 bg-[#0B0D12] hover:border-white/20 text-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-2">
-                          <Icon className={`w-4 h-4 ${isSelected ? 'text-pink-400' : 'text-slate-400'}`} />
-                          <span className="font-semibold text-xs text-white">{cat.name}</span>
-                        </div>
-                        {isSelected && <CheckCircle2 className="w-4 h-4 text-pink-400" />}
+                      }
+                    }}
+                    className={`p-4 rounded-xl border cursor-pointer transition-all ${
+                      isSelected
+                        ? 'border-[#0071E3] dark:border-[#2997FF] bg-[#0071E3]/[0.04] dark:bg-[#2997FF]/[0.08] text-neutral-900 dark:text-white shadow-sm'
+                        : 'border-black/[0.06] dark:border-white/[0.06] bg-neutral-50/50 dark:bg-white/[0.02] hover:bg-neutral-100/60 dark:hover:bg-white/[0.04] text-neutral-700 dark:text-neutral-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2">
+                        <Icon className={`w-4 h-4 ${isSelected ? 'text-[#0071E3] dark:text-[#2997FF]' : 'text-neutral-400'}`} />
+                        <span className="font-medium text-xs text-neutral-900 dark:text-white">{cat.name}</span>
                       </div>
-                      <p className="text-[11px] text-slate-400 leading-relaxed">
-                        {cat.description || 'Targeted criteria and personalized Instagram DM angle.'}
-                      </p>
+                      {isSelected && <CheckCircle2 className="w-4 h-4 text-[#0071E3] dark:text-[#2997FF]" />}
                     </div>
-                  );
-                })}
-              </div>
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                      {cat.description || 'Targeted criteria and personalized Instagram DM angle.'}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Target City & Depth */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  2. Target City / Region
+                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
+                  Target City or Metro Region
                 </label>
                 <div className="relative">
-                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  <MapPin className="w-4 h-4 text-neutral-400 absolute left-3 top-3" />
                   <input
                     type="text"
                     value={locationQuery}
                     onChange={(e) => setLocationQuery(e.target.value)}
                     placeholder="e.g. Mumbai, London, Dubai, New York"
-                    className="w-full bg-[#0B0D12] border border-white/10 rounded-md pl-9 pr-3 py-2.5 text-xs text-white focus:outline-none focus:border-pink-500"
+                    className="w-full bg-neutral-50 dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08] rounded-xl pl-9 pr-3 py-2.5 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all"
                   />
                 </div>
                 {/* Popular City Chips */}
@@ -421,8 +386,10 @@ export default function DiscoverPage() {
                       key={city}
                       type="button"
                       onClick={() => setLocationQuery(city)}
-                      className={`px-2 py-0.5 rounded text-[10px] border transition-colors ${
-                        locationQuery === city ? 'bg-pink-500/20 border-pink-500 text-pink-300 font-semibold' : 'bg-white/5 border-white/5 text-slate-400'
+                      className={`px-2.5 py-1 rounded-full text-[11px] transition-colors ${
+                        locationQuery === city 
+                          ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-medium' 
+                          : 'bg-black/[0.04] dark:bg-white/[0.06] text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
                       }`}
                     >
                       {city}
@@ -432,88 +399,63 @@ export default function DiscoverPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  3. Batch Volume
+                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
+                  Batch Discovery Size
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setMode('quick')}
-                    className={`py-2 px-3 rounded-md text-xs font-medium border flex items-center justify-center gap-1.5 transition-all ${
+                    className={`py-2.5 px-3 rounded-xl text-xs font-medium border flex items-center justify-center gap-1.5 transition-all ${
                       mode === 'quick'
-                        ? 'border-pink-500 bg-pink-500/20 text-pink-300'
-                        : 'border-white/10 bg-[#0B0D12] text-slate-400'
+                        ? 'border-[#0071E3] dark:border-[#2997FF] bg-[#0071E3]/10 dark:bg-[#2997FF]/15 text-[#0071E3] dark:text-[#2997FF] font-semibold'
+                        : 'border-black/[0.06] dark:border-white/[0.06] bg-neutral-50/50 dark:bg-white/[0.02] text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
                     }`}
                   >
-                    <Zap className="w-3.5 h-3.5 text-pink-400" />
+                    <Zap className="w-3.5 h-3.5" />
                     <span>Quick (6 Profiles)</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setMode('deep')}
-                    className={`py-2 px-3 rounded-md text-xs font-medium border flex items-center justify-center gap-1.5 transition-all ${
+                    className={`py-2.5 px-3 rounded-xl text-xs font-medium border flex items-center justify-center gap-1.5 transition-all ${
                       mode === 'deep'
-                        ? 'border-pink-500 bg-pink-500/20 text-pink-300'
-                        : 'border-white/10 bg-[#0B0D12] text-slate-400'
+                        ? 'border-[#0071E3] dark:border-[#2997FF] bg-[#0071E3]/10 dark:bg-[#2997FF]/15 text-[#0071E3] dark:text-[#2997FF] font-semibold'
+                        : 'border-black/[0.06] dark:border-white/[0.06] bg-neutral-50/50 dark:bg-white/[0.02] text-neutral-600 dark:text-neutral-400 hover:text-neutral-900'
                     }`}
                   >
-                    <Layers className="w-3.5 h-3.5 text-pink-400" />
+                    <Layers className="w-3.5 h-3.5" />
                     <span>Deep (12 Profiles)</span>
                   </button>
                 </div>
-                <span className="text-[10px] text-slate-400 mt-2 block">
-                  Pulls verified Instagram handles, followers count, bio link, audits their site, and drafts DMs.
+                <span className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-2 block">
+                  Serper extracts @handle, followers, and bio links. You pick which ones to generate AI pitches for.
                 </span>
-              </div>
-            </div>
-
-            {/* How It Works Explainer Box */}
-            <div className="p-4 rounded-lg bg-[#0B0D12] border border-white/5 space-y-2">
-              <span className="text-[11px] text-pink-400 uppercase font-mono block">
-                How Ban-Proof Instagram Harvesting Works
-              </span>
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 text-center text-xs">
-                <div className="p-2.5 rounded bg-white/5 border border-white/5">
-                  <span className="font-semibold text-pink-400 block">1. Google X-Ray</span>
-                  <span className="text-[10px] text-slate-400">0 Tokens · Ban-Proof</span>
-                </div>
-                <div className="p-2.5 rounded bg-white/5 border border-white/5">
-                  <span className="font-semibold text-purple-400 block">2. Handle & Bio</span>
-                  <span className="text-[10px] text-slate-400">Extracts @handle & followers</span>
-                </div>
-                <div className="p-2.5 rounded bg-white/5 border border-white/5">
-                  <span className="font-semibold text-blue-400 block">3. Portfolio Audit</span>
-                  <span className="text-[10px] text-slate-400">Crawls bio website safely</span>
-                </div>
-                <div className="p-2.5 rounded bg-white/5 border border-white/5">
-                  <span className="font-semibold text-emerald-400 block">4. On-Demand AI</span>
-                  <span className="text-[10px] text-slate-400">Generate DMs on targets you pick</span>
-                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* WORKFLOW 2: DIRECT CANDIDATE URL INPUT */}
+        {/* WORKFLOW 2: DIRECT CANDIDATE AUDIT */}
         {activeWorkflow === 'direct_url' && (
-          <div className="p-6 rounded-xl bg-[#121620] border border-white/10 space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <span className="text-xs font-semibold text-white uppercase tracking-wider">
-                Target Website URL or Instagram Profile
+          <div className="p-6 rounded-2xl bg-white dark:bg-[#141416] border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
+              <span className="text-xs font-semibold text-neutral-900 dark:text-white">
+                Candidate Website or Instagram Profile
               </span>
               <div className="flex items-center gap-2 text-xs">
-                <span className="text-slate-400">Sample Studios:</span>
+                <span className="text-neutral-400">Sample Studios:</span>
                 <button
                   type="button"
                   onClick={() => prefillExample('interior')}
-                  className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-pink-300 font-mono text-[11px] border border-white/5"
+                  className="px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] text-neutral-700 dark:text-neutral-300 text-[11px]"
                 >
                   Essajees Atelier
                 </button>
                 <button
                   type="button"
                   onClick={() => prefillExample('arch')}
-                  className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-amber-300 font-mono text-[11px] border border-white/5"
+                  className="px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] text-neutral-700 dark:text-neutral-300 text-[11px]"
                 >
                   Monolith Atelier
                 </button>
@@ -521,25 +463,25 @@ export default function DiscoverPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                Primary Website URL <span className="text-amber-400">*</span>
+              <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
+                Primary Website URL
               </label>
               <div className="relative">
-                <Globe className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <Globe className="w-4 h-4 text-neutral-400 absolute left-3 top-3" />
                 <input
                   type="url"
                   value={manualUrl}
                   onChange={(e) => setManualUrl(e.target.value)}
                   placeholder="https://essajeesatelier.com"
                   required
-                  className="w-full bg-[#0B0D12] border border-white/10 rounded-md pl-9 pr-3 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500 font-mono"
+                  className="w-full bg-neutral-50 dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08] rounded-xl pl-9 pr-3 py-2.5 text-xs text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
                   Business / Studio Name (Optional)
                 </label>
                 <input
@@ -547,11 +489,11 @@ export default function DiscoverPage() {
                   value={businessName}
                   onChange={(e) => setBusinessName(e.target.value)}
                   placeholder="e.g. Essajees Atelier"
-                  className="w-full bg-[#0B0D12] border border-white/10 rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-neutral-50 dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08] rounded-xl px-3 py-2 text-xs text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
                   Public Instagram Handle (Optional)
                 </label>
                 <input
@@ -559,19 +501,19 @@ export default function DiscoverPage() {
                   value={instagramHandle}
                   onChange={(e) => setInstagramHandle(e.target.value)}
                   placeholder="@essajeesatelier"
-                  className="w-full bg-[#0B0D12] border border-white/10 rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-pink-500"
+                  className="w-full bg-neutral-50 dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08] rounded-xl px-3 py-2 text-xs text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+              <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
                 Target Playbook Rubric
               </label>
               <select
                 value={selectedPlaybookId}
                 onChange={(e) => setSelectedPlaybookId(Number(e.target.value))}
-                className="w-full bg-[#0B0D12] border border-white/10 rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                className="w-full bg-neutral-50 dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08] rounded-xl px-3 py-2 text-xs text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all"
               >
                 {allPlaybooks.map((pb) => (
                   <option key={pb.id} value={pb.id}>
@@ -585,16 +527,16 @@ export default function DiscoverPage() {
 
         {/* WORKFLOW 3: GENERAL SECTOR SEARCH */}
         {activeWorkflow === 'sector_search' && (
-          <div className="p-6 rounded-xl bg-[#121620] border border-white/10 space-y-5">
+          <div className="p-6 rounded-2xl bg-white dark:bg-[#141416] border border-black/[0.06] dark:border-white/[0.08] shadow-sm space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
                   Category
                 </label>
                 <select
                   value={selectedPlaybookId}
                   onChange={(e) => setSelectedPlaybookId(Number(e.target.value))}
-                  className="w-full bg-[#0B0D12] border border-white/10 rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-neutral-50 dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08] rounded-xl px-3 py-2 text-xs text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all"
                 >
                   {allPlaybooks.map((pb) => (
                     <option key={pb.id} value={pb.id}>
@@ -605,7 +547,7 @@ export default function DiscoverPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
                   City / Location
                 </label>
                 <input
@@ -613,47 +555,143 @@ export default function DiscoverPage() {
                   value={locationQuery}
                   onChange={(e) => setLocationQuery(e.target.value)}
                   placeholder="e.g. Mumbai, London"
-                  className="w-full bg-[#0B0D12] border border-white/10 rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-neutral-50 dark:bg-white/[0.04] border border-black/[0.08] dark:border-white/[0.08] rounded-xl px-3 py-2 text-xs text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all"
                 />
               </div>
             </div>
           </div>
         )}
 
-        {/* Primary Action Button */}
-        <div className="flex items-center justify-between pt-2">
-          <div className="text-xs text-slate-400 flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+        {/* Primary Action Button - Apple Editorial */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
+          <div className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>Human-controlled sending · 1-click &quot;Open Instagram Profile&quot; in CRM</span>
           </div>
 
           <button
             type="submit"
-            disabled={isSubmitting}
-            className={`px-6 py-3 font-bold text-xs rounded-md shadow-lg transition-all disabled:opacity-50 flex items-center gap-2 ${
-              activeWorkflow === 'instagram_leads'
-                ? 'bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white shadow-pink-500/20'
-                : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/10'
-            }`}
+            disabled={isHarvesting}
+            className="px-6 py-2.5 font-medium text-xs rounded-xl bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-950 shadow-sm transition-all disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.99]"
           >
             {activeWorkflow === 'instagram_leads' ? (
-              <InstagramIcon className="w-4 h-4 text-white" />
+              <InstagramIcon className="w-3.5 h-3.5 text-white dark:text-neutral-950" />
             ) : (
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-3.5 h-3.5" />
             )}
             <span>
-              {isSubmitting 
-                ? 'Harvesting & Auditing...' 
+              {isHarvesting 
+                ? 'Harvesting Leads...' 
                 : activeWorkflow === 'instagram_leads'
-                ? 'Harvest Instagram Leads (0 AI Tokens)'
+                ? 'Harvest Instagram Leads'
                 : activeWorkflow === 'direct_url' 
-                ? 'Audit Website & Generate Outreach Dossier' 
+                ? 'Audit Website & Generate Dossier' 
                 : 'Execute Search Run'}
             </span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </form>
+
+      {/* LIVE HARVEST PROGRESS DRAWER / MODAL */}
+      {isHarvesting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#141416] border border-black/[0.08] dark:border-white/[0.08] rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.06]">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <div className={`w-2.5 h-2.5 rounded-full ${completedRun ? 'bg-emerald-500' : 'bg-[#0071E3] animate-pulse'}`} />
+                  <h3 className="text-base font-semibold text-neutral-900 dark:text-white">
+                    {completedRun ? 'Studio Discovery Completed' : 'Harvesting Studio Prospects'}
+                  </h3>
+                </div>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  {selectedPlaybook?.name || 'Studio'} · {locationQuery || 'Global'} ({mode === 'deep' ? '12 targets' : '6 targets'})
+                </p>
+              </div>
+
+              {completedRun && (
+                <button
+                  onClick={() => setIsHarvesting(false)}
+                  className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white text-xs px-2 py-1 rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                >
+                  ✕ Close
+                </button>
+              )}
+            </div>
+
+            {/* Apple Progress Bar */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-medium">
+                <span className="text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                  {!completedRun && <span className="inline-block w-3 h-3 border-2 border-[#0071E3] border-t-transparent rounded-full animate-spin" />}
+                  <span>{harvestStage}</span>
+                </span>
+                <span className="font-mono text-neutral-500 dark:text-neutral-400">{harvestProgress}%</span>
+              </div>
+              <div className="w-full h-1.5 bg-neutral-100 dark:bg-white/[0.06] rounded-full overflow-hidden">
+                <div 
+                  className={`h-full transition-all duration-500 ${completedRun ? 'bg-emerald-500' : 'bg-[#0071E3]'}`}
+                  style={{ width: `${harvestProgress}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Live Step-by-Step Terminal / Execution Feed */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-neutral-400 font-medium">
+                <span>Real-Time Activity Stream</span>
+                <span>{harvestLogs.length} events logged</span>
+              </div>
+              <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-black/30 border border-black/[0.04] dark:border-white/[0.04] max-h-52 overflow-y-auto font-mono text-[11px] space-y-1.5">
+                {harvestLogs.map((log, idx) => (
+                  <div key={idx} className="flex items-start gap-2 leading-relaxed">
+                    <span className="text-neutral-400 shrink-0 text-[10px]">{log.time}</span>
+                    <span className={
+                      log.type === 'success' 
+                        ? 'text-emerald-600 dark:text-emerald-400 font-semibold' 
+                        : log.type === 'detail' 
+                        ? 'text-neutral-500 dark:text-neutral-400' 
+                        : 'text-neutral-800 dark:text-neutral-200'
+                    }>
+                      {log.text}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Completed Summary & CTAs */}
+            {completedRun ? (
+              <div className="pt-2 border-t border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between gap-3">
+                <div className="text-xs text-neutral-600 dark:text-neutral-400">
+                  <span className="font-semibold text-neutral-900 dark:text-white">{completedRun.prospects_created || completedRun.candidates_found} new leads</span> ready in directory.
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => router.push('/runs')}
+                    className="px-3 py-1.5 rounded-xl text-xs font-medium bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] text-neutral-700 dark:text-neutral-300"
+                  >
+                    View Audit Logs
+                  </button>
+                  <button
+                    onClick={() => router.push('/prospects')}
+                    className="px-4 py-1.5 rounded-xl text-xs font-medium bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-900 flex items-center gap-1.5 shadow-sm"
+                  >
+                    <span>Inspect Prospects</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-[11px] text-neutral-400 dark:text-neutral-500 text-center pt-1">
+                Harvesting public Instagram profiles & auditing portfolios safely without token drain...
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

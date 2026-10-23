@@ -34,11 +34,27 @@ class InstagramDiscoveryService
             ];
         }
 
-        $query = "site:instagram.com {$category} {$location} followers";
+        // Calibrated commercial studio query with strict exclusion of educational and institutional profiles
+        $lowerCat = strtolower($category);
+        $nicheKeywords = match(true) {
+            str_contains($lowerCat, 'arch') => '"architecture studio" OR "architects" OR "architectural design"',
+            str_contains($lowerCat, 'photo') || str_contains($lowerCat, 'video') => '"photographer" OR "photography studio" OR "commercial photographer"',
+            str_contains($lowerCat, 'interior') => '"interior designer" OR "interior design studio" OR "interiors"',
+            str_contains($lowerCat, 'clinic') || str_contains($lowerCat, 'health') => '"clinic" OR "aesthetic clinic" OR "dental clinic"',
+            str_contains($lowerCat, 'restaurant') || str_contains($lowerCat, 'hospitality') || str_contains($lowerCat, 'cafe') => '"restaurant" OR "cafe" OR "bistro" OR "bakery"',
+            str_contains($lowerCat, 'event') || str_contains($lowerCat, 'wedding') => '"event planner" OR "wedding planner" OR "luxury events"',
+            default => "\"{$category}\"",
+        };
+
+        // Explicitly ban colleges, universities, student fests, councils, and academic directories
+        $exclusions = "-college -university -school -institute -institution -academy -education -council -exam -alumni -admissions -campus -students -fest";
+        $query = "site:instagram.com {$nicheKeywords} \"{$location}\" {$exclusions}";
         $leads = [];
         $warnings = [];
 
         try {
+            // Free Serper accounts strictly disallow num > 10 ("Query pattern not allowed for free accounts")
+            $numResults = min(10, max(5, $limit));
             $response = Http::timeout(12)
                 ->withHeaders([
                     'X-API-KEY' => $this->serperKey,
@@ -46,7 +62,7 @@ class InstagramDiscoveryService
                 ])
                 ->post('https://google.serper.dev/search', [
                     'q' => $query,
-                    'num' => 10,
+                    'num' => $numResults,
                 ]);
 
             if (! $response->successful()) {
@@ -56,6 +72,13 @@ class InstagramDiscoveryService
 
             $organic = $response->json('organic') ?? [];
 
+            // Disqualifying tokens for academic, institutional, and media entities
+            $disqualifiedWords = [
+                'college', 'university', 'school', 'institute', 'academy', 'campus', 
+                'alumni', 'education', 'council', 'dept', 'department', 'students',
+                'admissions', 'classes', 'magazine', 'news', 'portal', 'association'
+            ];
+
             foreach ($organic as $item) {
                 $link = $item['link'] ?? '';
                 $title = $item['title'] ?? '';
@@ -64,6 +87,19 @@ class InstagramDiscoveryService
                 // Extract Instagram handle from URL
                 $handle = $this->extractInstagramHandle($link);
                 if (! $handle) {
+                    continue;
+                }
+
+                $combinedText = strtolower("{$handle} {$title} {$snippet}");
+                $isDisqualified = false;
+                foreach ($disqualifiedWords as $badWord) {
+                    if (str_contains($combinedText, $badWord)) {
+                        $isDisqualified = true;
+                        break;
+                    }
+                }
+
+                if ($isDisqualified) {
                     continue;
                 }
 

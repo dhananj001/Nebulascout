@@ -154,27 +154,27 @@ export function ProspectDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-3xl h-screen bg-[#0E1117] border-l border-white/10 flex flex-col justify-between shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-3xl h-screen bg-white dark:bg-[#111113] border-l border-black/[0.08] dark:border-white/[0.08] flex flex-col justify-between shadow-2xl overflow-hidden transition-colors">
         {/* Header */}
-        <div className="p-6 border-b border-white/10 bg-[#121620]">
+        <div className="p-6 border-b border-black/[0.06] dark:border-white/[0.06] bg-neutral-50/70 dark:bg-[#151518]">
           <div className="flex items-start justify-between">
             <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-lg font-bold text-white tracking-tight">{prospect?.business_name}</h2>
-                <span className="px-2 py-0.5 rounded text-[11px] font-mono uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <div className="flex items-center gap-2.5">
+                <h2 className="text-xl font-semibold text-neutral-900 dark:text-white tracking-tight">{prospect?.business_name}</h2>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-200/70 dark:bg-white/10 text-neutral-700 dark:text-neutral-300">
                   {prospect?.stage.replace('_', ' ')}
                 </span>
                 {prospect?.tags?.includes('Demo Data') && (
-                  <span className="px-2 py-0.5 rounded text-[10px] bg-slate-800 text-slate-400 border border-slate-700">
-                    Demo Data
+                  <span className="px-2 py-0.2 rounded-full text-[10px] bg-neutral-200/50 dark:bg-white/5 text-neutral-500">
+                    Demo
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-4 mt-2 text-xs text-slate-400">
+              <div className="flex items-center gap-4 mt-2 text-xs text-neutral-500 dark:text-neutral-400">
                 {prospect?.location && (
                   <span className="flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5" />
+                    <MapPin className="w-3.5 h-3.5 text-neutral-400" />
                     {prospect.location}
                   </span>
                 )}
@@ -183,37 +183,39 @@ export function ProspectDetailModal({
                     href={prospect.primary_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1 text-slate-300 hover:text-amber-400 underline underline-offset-2"
+                    className="flex items-center gap-1 text-neutral-700 dark:text-neutral-300 hover:text-[#0071E3] dark:hover:text-[#2997FF] transition-colors"
                   >
-                    <Globe className="w-3.5 h-3.5" />
-                    {prospect.normalized_domain || 'Website'}
+                    <Globe className="w-3.5 h-3.5 text-neutral-400" />
+                    <span>{prospect.normalized_domain || 'Website'}</span>
+                    <ExternalLink className="w-2.5 h-2.5 opacity-60" />
                   </a>
                 )}
                 {prospect?.instagram_handle && (
                   <a
-                    href={prospect.instagram_url || `https://instagram.com/${prospect.instagram_handle}`}
+                    href={prospect.instagram_url || `https://instagram.com/${prospect.instagram_handle.replace(/^@/, '')}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1 text-slate-300 hover:text-pink-400 underline underline-offset-2"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C]/20 font-medium transition-all"
                   >
-                    <InstagramIcon className="w-3.5 h-3.5" />
-                    @{prospect.instagram_handle}
+                    <InstagramIcon className="w-3.5 h-3.5 text-[#E1306C]" />
+                    <span>@{prospect.instagram_handle.replace(/^@/, '')}</span>
+                    <ExternalLink className="w-2.5 h-2.5 opacity-70" />
                   </a>
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <button
                 onClick={handleReResearch}
                 disabled={isReResearching}
                 title="Run fresh website audit and AI synthesis"
-                className="p-2 text-slate-400 hover:text-white rounded-md hover:bg-white/5 transition-colors disabled:opacity-50"
+                className="p-2 text-neutral-400 hover:text-neutral-900 dark:hover:text-white rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors disabled:opacity-50"
               >
-                <RefreshCw className={`w-4 h-4 ${isReResearching ? 'animate-spin text-amber-400' : ''}`} />
+                <RefreshCw className={`w-4 h-4 ${isReResearching ? 'animate-spin text-[#0071E3]' : ''}`} />
               </button>
               <button
                 onClick={onClose}
-                className="p-2 text-slate-400 hover:text-white rounded-md hover:bg-white/5 transition-colors"
+                className="p-2 text-neutral-400 hover:text-neutral-900 dark:hover:text-white rounded-lg hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -221,9 +223,9 @@ export function ProspectDetailModal({
           </div>
 
           {/* Scores Row */}
-          <div className="flex items-center gap-3 mt-4 pt-3 border-t border-white/5">
+          <div className="flex items-center gap-2 mt-4 pt-3 border-t border-black/[0.04] dark:border-white/[0.04]">
             <ScoreBadge
-              label="Fit Score"
+              label="Fit"
               score={prospect?.fit_score || 0}
               explanation={prospect?.score_explanation?.fit_factors}
               size="md"
@@ -241,7 +243,7 @@ export function ProspectDetailModal({
               size="md"
             />
             {prospect.last_researched_at && (new Date().getTime() - new Date(prospect.last_researched_at).getTime()) > 60 * 86400000 && (
-              <span className="flex items-center gap-1 text-[11px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+              <span className="flex items-center gap-1 text-[11px] text-amber-700 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
                 <Clock className="w-3 h-3" />
                 Stale Research
               </span>
@@ -249,21 +251,23 @@ export function ProspectDetailModal({
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex items-center px-6 border-b border-white/10 bg-[#0B0D12] text-xs font-medium text-slate-400">
-          {(['overview', 'outreach', 'audit', 'evidence', 'timeline'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`py-3 px-4 border-b-2 capitalize transition-colors ${
-                activeTab === tab
-                  ? 'border-amber-400 text-white font-semibold'
-                  : 'border-transparent hover:text-slate-200'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+        {/* Navigation Tabs - Apple Segmented Style */}
+        <div className="flex items-center px-6 border-b border-black/[0.06] dark:border-white/[0.06] bg-neutral-50/50 dark:bg-[#141416] text-xs font-medium">
+          <div className="flex items-center gap-1 py-2">
+            {(['overview', 'outreach', 'audit', 'evidence', 'timeline'] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`py-1.5 px-3.5 rounded-xl capitalize transition-all text-xs font-medium ${
+                  activeTab === tab
+                    ? 'bg-white dark:bg-[#1E1E22] text-neutral-900 dark:text-white shadow-xs font-semibold'
+                    : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Tab Content Area */}
@@ -271,63 +275,63 @@ export function ProspectDetailModal({
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
-              {/* Executive Assessment */}
-              <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-3">
-                <div className="flex items-center gap-2 text-xs font-semibold text-amber-400 uppercase tracking-wider">
-                  <Sparkles className="w-4 h-4" />
-                  <span>Strategic Assessment & Recommended Action</span>
+              {/* Executive Assessment Card */}
+              <div className="p-5 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/[0.06] space-y-3">
+                <div className="flex items-center gap-2 text-xs font-semibold text-neutral-900 dark:text-white">
+                  <Sparkles className="w-4 h-4 text-[#0071E3] dark:text-[#2997FF]" />
+                  <span>Strategic Assessment & Recommended Angle</span>
                 </div>
-                <p className="text-xs text-slate-200 leading-relaxed">
-                  {prospect?.category?.description || 'Boutique prospective client identified for high-performance editorial web services.'}
+                <p className="text-xs text-neutral-600 dark:text-neutral-300 leading-relaxed">
+                  {prospect?.category?.description || 'Boutique studio practice identified for editorial web redesign, portfolio performance, and direct brand collaboration.'}
                 </p>
-                <div className="p-3 bg-amber-500/10 rounded-lg border border-amber-500/20 text-xs text-amber-200">
-                  <strong>Recommended Next Step:</strong> Review personalized draft in Outreach tab, verify Cliff House basalt observation, copy draft, and send manually via Instagram DM.
+                <div className="p-3 bg-[#0071E3]/[0.06] dark:bg-[#2997FF]/[0.08] rounded-xl border border-[#0071E3]/20 dark:border-[#2997FF]/20 text-xs text-neutral-800 dark:text-neutral-200">
+                  <strong className="text-[#0071E3] dark:text-[#2997FF]">Actionable Next Step:</strong> Review personalized draft in Outreach tab, verify portfolio observations, copy draft, and dispatch via 1-click Instagram DM.
                 </div>
               </div>
 
               {/* Opportunities */}
               <div>
-                <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3">
-                  Identified Opportunities ({prospect?.opportunities?.length || 0})
+                <h4 className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-3">
+                  Identified Strategic Angles ({prospect?.opportunities?.length || 0})
                 </h4>
                 <div className="space-y-2.5">
                   {prospect?.opportunities?.map((opp) => (
-                    <div key={opp.id} className="p-3.5 rounded-lg bg-[#121620] border border-white/5 space-y-1">
+                    <div key={opp.id} className="p-4 rounded-xl bg-neutral-50/70 dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04] space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="font-medium text-xs text-white">{opp.title}</span>
-                        <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
-                          Hypothesis ({(opp.confidence * 100).toFixed(0)}% conf)
+                        <span className="font-medium text-xs text-neutral-900 dark:text-white">{opp.title}</span>
+                        <span className="text-[10px] font-medium text-[#0071E3] dark:text-[#2997FF] bg-[#0071E3]/10 dark:bg-[#2997FF]/15 px-2 py-0.5 rounded-full">
+                          {(opp.confidence * 100).toFixed(0)}% confidence
                         </span>
                       </div>
-                      <p className="text-xs text-slate-400 leading-relaxed">{opp.rationale}</p>
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">{opp.rationale}</p>
                     </div>
                   ))}
                   {(!prospect?.opportunities || prospect.opportunities.length === 0) && (
-                    <p className="text-xs text-slate-400 italic">No opportunities extracted yet. Run research to synthesize.</p>
+                    <p className="text-xs text-neutral-400 italic">No opportunities extracted yet. Run research or AI Pitch to synthesize.</p>
                   )}
                 </div>
               </div>
 
               {/* Observations Breakdown */}
               <div>
-                <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3">
-                  Observed Facts vs Hypotheses
+                <h4 className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-3">
+                  Verified Facts & Evidence Excerpts
                 </h4>
                 <div className="space-y-2">
                   {prospect?.observations?.map((obs) => (
-                    <div key={obs.id} className="p-3 rounded-lg bg-[#121620] border border-white/5 text-xs space-y-1">
+                    <div key={obs.id} className="p-3.5 rounded-xl bg-neutral-50/70 dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04] text-xs space-y-1.5">
                       <div className="flex items-center gap-2">
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase ${
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
                           obs.kind === 'observed_fact' 
-                            ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20' 
-                            : 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
+                            ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' 
+                            : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
                         }`}>
                           {obs.kind.replace('_', ' ')}
                         </span>
-                        <span className="text-slate-200">{obs.claim}</span>
+                        <span className="text-neutral-800 dark:text-neutral-200 font-medium">{obs.claim}</span>
                       </div>
                       {obs.evidence_excerpt && (
-                        <p className="text-[11px] text-slate-400 pl-2 border-l border-white/10 italic">
+                        <p className="text-[11px] text-neutral-500 dark:text-neutral-400 pl-2.5 border-l-2 border-black/[0.08] dark:border-white/[0.08] italic">
                           &quot;{obs.evidence_excerpt}&quot;
                         </p>
                       )}
@@ -343,15 +347,15 @@ export function ProspectDetailModal({
             <div className="space-y-6">
               {/* Channel Selector */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 p-1 rounded-xl bg-neutral-100 dark:bg-white/[0.04]">
                   {(['instagram_dm', 'email', 'website_contact'] as const).map((ch) => (
                     <button
                       key={ch}
                       onClick={() => setActiveChannel(ch)}
-                      className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                         activeChannel === ch
-                          ? 'border-amber-500 bg-amber-500/10 text-amber-300 font-semibold'
-                          : 'border-white/10 text-slate-400 hover:text-white'
+                          ? 'bg-white dark:bg-[#1E1E22] text-neutral-900 dark:text-white shadow-xs font-semibold'
+                          : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
                       }`}
                     >
                       {ch === 'instagram_dm' ? 'Instagram DM' : ch === 'email' ? 'Email' : 'Website Form'}
@@ -361,7 +365,7 @@ export function ProspectDetailModal({
                 <button
                   onClick={handleGenerateNewDraft}
                   disabled={isGeneratingDraft}
-                  className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 transition-colors"
+                  className="flex items-center gap-1.5 text-xs text-[#0071E3] dark:text-[#2997FF] hover:underline font-medium transition-colors"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>{isGeneratingDraft ? 'Generating...' : 'Regenerate Draft'}</span>
@@ -369,12 +373,12 @@ export function ProspectDetailModal({
               </div>
 
               {/* Draft Box */}
-              <div className="p-4 rounded-xl bg-[#121620] border border-white/10 space-y-3">
+              <div className="p-5 rounded-2xl bg-neutral-50 dark:bg-white/[0.02] border border-black/[0.06] dark:border-white/[0.06] space-y-3.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">
-                    Draft Status: <strong className="text-amber-400 uppercase font-mono">{currentDraft?.status || 'New'}</strong>
+                  <span className="text-neutral-500 dark:text-neutral-400">
+                    Draft Status: <strong className="text-neutral-900 dark:text-white uppercase font-medium">{currentDraft?.status || 'New'}</strong>
                   </span>
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] text-neutral-400">
                     Version: {currentDraft?.version || 1}
                   </span>
                 </div>
@@ -385,7 +389,7 @@ export function ProspectDetailModal({
                   onChange={(e) => setEditableBody(e.target.value)}
                   onBlur={handleSaveDraft}
                   placeholder="Outreach draft content..."
-                  className="w-full bg-[#0B0D12] border border-white/10 rounded-lg p-3.5 text-xs text-white font-sans leading-relaxed focus:outline-none focus:border-amber-500"
+                  className="w-full bg-white dark:bg-[#141416] border border-black/[0.08] dark:border-white/[0.08] rounded-xl p-3.5 text-xs text-neutral-900 dark:text-white font-sans leading-relaxed focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all"
                 />
 
                 {/* Workflow Action Bar */}
@@ -394,7 +398,7 @@ export function ProspectDetailModal({
                     {/* 1. Copy Message */}
                     <button
                       onClick={() => currentDraft && handleCopyDraft(currentDraft)}
-                      className="px-3.5 py-2 bg-white/10 hover:bg-white/15 text-white font-medium text-xs rounded-md border border-white/10 flex items-center gap-1.5 transition-colors"
+                      className="px-3.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-900 font-medium text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-all active:scale-[0.98]"
                     >
                       {copiedDraftId === currentDraft?.id ? (
                         <>
@@ -412,25 +416,25 @@ export function ProspectDetailModal({
                     {/* 2. Open Profile */}
                     {prospect.instagram_url || prospect.instagram_handle ? (
                       <a
-                        href={prospect.instagram_url || `https://instagram.com/${prospect.instagram_handle}`}
+                        href={prospect.instagram_url || `https://instagram.com/${(prospect.instagram_handle || '').replace(/^@/, '')}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="px-3 py-2 bg-white/5 hover:bg-white/10 text-slate-300 font-medium text-xs rounded-md border border-white/10 flex items-center gap-1.5 transition-colors"
+                        className="px-3 py-1.5 bg-[#E1306C]/10 hover:bg-[#E1306C]/20 text-[#E1306C] font-medium text-xs rounded-xl flex items-center gap-1.5 transition-colors"
                       >
-                        <InstagramIcon className="w-3.5 h-3.5 text-pink-400" />
+                        <InstagramIcon className="w-3.5 h-3.5 text-[#E1306C]" />
                         <span>Open Profile</span>
-                        <ExternalLink className="w-3 h-3 text-slate-400" />
+                        <ExternalLink className="w-3 h-3 opacity-60" />
                       </a>
                     ) : prospect.primary_url ? (
                       <a
                         href={prospect.primary_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="px-3 py-2 bg-white/5 hover:bg-white/10 text-slate-300 font-medium text-xs rounded-md border border-white/10 flex items-center gap-1.5 transition-colors"
+                        className="px-3 py-1.5 bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] text-neutral-700 dark:text-neutral-300 font-medium text-xs rounded-xl flex items-center gap-1.5 transition-colors"
                       >
-                        <Globe className="w-3.5 h-3.5 text-blue-400" />
+                        <Globe className="w-3.5 h-3.5 text-neutral-400" />
                         <span>Open Website</span>
-                        <ExternalLink className="w-3 h-3 text-slate-400" />
+                        <ExternalLink className="w-3 h-3 opacity-60" />
                       </a>
                     ) : null}
                   </div>
@@ -438,7 +442,7 @@ export function ProspectDetailModal({
                   {/* 3. Mark as Sent Confirmation */}
                   <button
                     onClick={() => currentDraft && setSelectedDraftForSend(currentDraft)}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs rounded-md shadow-md flex items-center gap-1.5 transition-colors"
+                    className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-colors active:scale-[0.98]"
                   >
                     <Send className="w-3.5 h-3.5" />
                     <span>Confirm Sent Externally</span>
@@ -448,28 +452,28 @@ export function ProspectDetailModal({
 
               {/* Sent Messages History */}
               <div>
-                <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3">
+                <h4 className="text-xs font-semibold text-neutral-700 dark:text-neutral-300 mb-3">
                   Historical Sent Messages ({prospect.sent_messages?.length || 0})
                 </h4>
                 <div className="space-y-3">
                   {prospect.sent_messages?.map((sent) => (
-                    <div key={sent.id} className="p-3.5 rounded-lg bg-[#121620] border border-white/5 space-y-2">
+                    <div key={sent.id} className="p-4 rounded-xl bg-neutral-50/70 dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04] space-y-2">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-emerald-400 capitalize flex items-center gap-1.5">
+                        <span className="font-semibold text-emerald-600 dark:text-emerald-400 capitalize flex items-center gap-1.5">
                           <Check className="w-3.5 h-3.5" />
                           Sent via {sent.channel.replace('_', ' ')}
                         </span>
-                        <span className="text-[11px] text-slate-400 font-mono">
+                        <span className="text-[11px] text-neutral-400 font-mono">
                           {new Date(sent.sent_at).toLocaleString()}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-300 font-mono bg-[#0B0D12] p-2.5 rounded border border-white/5 whitespace-pre-wrap">
+                      <p className="text-xs text-neutral-700 dark:text-neutral-300 bg-white dark:bg-[#141416] p-3 rounded-lg border border-black/[0.04] dark:border-white/[0.04] whitespace-pre-wrap leading-relaxed">
                         {sent.exact_sent_text}
                       </p>
                     </div>
                   ))}
                   {(!prospect.sent_messages || prospect.sent_messages.length === 0) && (
-                    <p className="text-xs text-slate-400 italic">No messages marked as sent yet.</p>
+                    <p className="text-xs text-neutral-400 italic">No messages marked as sent yet.</p>
                   )}
                 </div>
               </div>
@@ -482,53 +486,53 @@ export function ProspectDetailModal({
               {prospect.latest_website_audit ? (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-[#121620] border border-white/5 rounded-lg">
-                      <span className="text-[11px] text-slate-400">Response Speed</span>
-                      <p className="text-sm font-bold text-white mt-1">
+                    <div className="p-4 bg-neutral-50/70 dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04] rounded-xl">
+                      <span className="text-[11px] text-neutral-500 dark:text-neutral-400">Response Speed</span>
+                      <p className="text-base font-semibold text-neutral-900 dark:text-white mt-0.5">
                         {prospect.latest_website_audit.response_time_ms} ms
                       </p>
                     </div>
-                    <div className="p-3 bg-[#121620] border border-white/5 rounded-lg">
-                      <span className="text-[11px] text-slate-400">Image Alt Coverage</span>
-                      <p className="text-sm font-bold text-white mt-1">
+                    <div className="p-4 bg-neutral-50/70 dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04] rounded-xl">
+                      <span className="text-[11px] text-neutral-500 dark:text-neutral-400">Image Alt Coverage</span>
+                      <p className="text-base font-semibold text-neutral-900 dark:text-white mt-0.5">
                         {prospect.latest_website_audit.alt_coverage_percent}%
                       </p>
                     </div>
-                    <div className="p-3 bg-[#121620] border border-white/5 rounded-lg">
-                      <span className="text-[11px] text-slate-400">HTTPS Encryption</span>
-                      <p className="text-sm font-bold text-emerald-400 mt-1">
-                        {prospect.latest_website_audit.https_supported ? 'Enabled' : 'No'}
+                    <div className="p-4 bg-neutral-50/70 dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04] rounded-xl">
+                      <span className="text-[11px] text-neutral-500 dark:text-neutral-400">HTTPS Encryption</span>
+                      <p className="text-base font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                        {prospect.latest_website_audit.https_supported ? 'Active' : 'Unencrypted'}
                       </p>
                     </div>
-                    <div className="p-3 bg-[#121620] border border-white/5 rounded-lg">
-                      <span className="text-[11px] text-slate-400">Mobile Viewport Meta</span>
-                      <p className="text-sm font-bold text-emerald-400 mt-1">
-                        {prospect.latest_website_audit.viewport_meta_found ? 'Present' : 'Missing'}
+                    <div className="p-4 bg-neutral-50/70 dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04] rounded-xl">
+                      <span className="text-[11px] text-neutral-500 dark:text-neutral-400">Mobile Viewport Meta</span>
+                      <p className="text-base font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                        {prospect.latest_website_audit.viewport_meta_found ? 'Optimized' : 'Missing'}
                       </p>
                     </div>
                   </div>
 
                   {/* Enquiry Paths Discovered */}
-                  <div className="p-4 bg-[#121620] border border-white/5 rounded-lg space-y-2">
-                    <span className="text-xs font-semibold text-slate-300">Enquiry Paths Discovered</span>
+                  <div className="p-4 bg-neutral-50/70 dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04] rounded-xl space-y-2">
+                    <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">Enquiry Paths Discovered</span>
                     <ul className="space-y-1">
                       {prospect.latest_website_audit.enquiry_paths_found?.map((path, idx) => (
-                        <li key={idx} className="text-xs font-mono text-amber-300 bg-white/5 px-2 py-1 rounded">
+                        <li key={idx} className="text-xs font-mono text-[#0071E3] dark:text-[#2997FF] bg-black/[0.03] dark:bg-white/[0.04] px-2.5 py-1 rounded-lg">
                           {path}
                         </li>
                       ))}
                       {(!prospect.latest_website_audit.enquiry_paths_found || prospect.latest_website_audit.enquiry_paths_found.length === 0) && (
-                        <li className="text-xs text-rose-400 italic">No enquiry paths or contact forms discovered during crawl.</li>
+                        <li className="text-xs text-rose-500 italic">No enquiry paths or contact forms discovered during crawl.</li>
                       )}
                     </ul>
                   </div>
 
                   {/* Tech stack signals */}
-                  <div className="p-4 bg-[#121620] border border-white/5 rounded-lg space-y-2">
-                    <span className="text-xs font-semibold text-slate-300">Detected Technologies</span>
-                    <div className="flex flex-wrap gap-2">
+                  <div className="p-4 bg-neutral-50/70 dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04] rounded-xl space-y-2">
+                    <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">Detected Technologies</span>
+                    <div className="flex flex-wrap gap-1.5">
                       {prospect.latest_website_audit.tech_stack_signals?.map((t, idx) => (
-                        <span key={idx} className="px-2 py-1 rounded text-xs bg-white/5 text-slate-300 border border-white/10">
+                        <span key={idx} className="px-2.5 py-1 rounded-lg text-xs bg-black/[0.03] dark:bg-white/[0.04] text-neutral-700 dark:text-neutral-300 border border-black/[0.04] dark:border-white/[0.04]">
                           {t}
                         </span>
                       ))}
@@ -536,12 +540,12 @@ export function ProspectDetailModal({
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-10 space-y-3">
-                  <Globe className="w-8 h-8 text-slate-500 mx-auto" />
-                  <p className="text-xs text-slate-400">No website audit completed for this prospect yet.</p>
+                <div className="text-center py-12 space-y-3">
+                  <Globe className="w-8 h-8 text-neutral-400 mx-auto" />
+                  <p className="text-xs text-neutral-500">No website audit completed for this prospect yet.</p>
                   <button
                     onClick={handleReResearch}
-                    className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-medium rounded-md transition-colors"
+                    className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-950 text-xs font-medium rounded-xl shadow-xs transition-colors"
                   >
                     Run Website Audit
                   </button>
@@ -553,18 +557,18 @@ export function ProspectDetailModal({
           {/* TAB 4: EVIDENCE STORE */}
           {activeTab === 'evidence' && (
             <div className="space-y-4">
-              <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+              <h4 className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
                 Source Evidence & Provenance ({prospect.sources?.length || 0})
               </h4>
               <div className="space-y-3">
                 {prospect.sources?.map((src) => (
-                  <div key={src.id} className="p-3.5 rounded-lg bg-[#121620] border border-white/5 space-y-2">
+                  <div key={src.id} className="p-4 rounded-xl bg-neutral-50/70 dark:bg-white/[0.02] border border-black/[0.04] dark:border-white/[0.04] space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-white truncate max-w-sm">{src.page_title || src.source_url}</span>
-                      <span className="text-[10px] font-mono text-slate-400">{new Date(src.retrieved_at).toLocaleDateString()}</span>
+                      <span className="font-semibold text-neutral-900 dark:text-white truncate max-w-sm">{src.page_title || src.source_url}</span>
+                      <span className="text-[11px] text-neutral-400">{new Date(src.retrieved_at).toLocaleDateString()}</span>
                     </div>
                     {src.excerpt && (
-                      <p className="text-xs text-slate-400 leading-relaxed italic bg-[#0B0D12] p-2 rounded">
+                      <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed italic bg-white dark:bg-[#141416] p-3 rounded-lg border border-black/[0.04] dark:border-white/[0.04]">
                         &quot;{src.excerpt}&quot;
                       </p>
                     )}
@@ -572,7 +576,7 @@ export function ProspectDetailModal({
                       href={src.source_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-[11px] text-amber-400 hover:underline"
+                      className="inline-flex items-center gap-1 text-[11px] text-[#0071E3] dark:text-[#2997FF] hover:underline"
                     >
                       <span>View Original Source</span>
                       <ExternalLink className="w-3 h-3" />
@@ -588,18 +592,18 @@ export function ProspectDetailModal({
             <div className="space-y-6">
               {/* Add Note */}
               <form onSubmit={handleAddNote} className="space-y-2">
-                <label className="block text-xs font-medium text-slate-300">Internal Operator Note</label>
+                <label className="block text-xs font-medium text-neutral-700 dark:text-neutral-300">Internal Operator Note</label>
                 <textarea
                   rows={2}
                   value={noteContent}
                   onChange={(e) => setNoteContent(e.target.value)}
                   placeholder="Record call outcome, feedback, or strategic detail..."
-                  className="w-full bg-[#121620] border border-white/10 rounded-lg p-3 text-xs text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-white dark:bg-[#141416] border border-black/[0.08] dark:border-white/[0.08] rounded-xl p-3 text-xs text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all"
                 />
                 <button
                   type="submit"
                   disabled={!noteContent.trim()}
-                  className="px-3 py-1.5 bg-white/10 hover:bg-white/15 text-white text-xs font-medium rounded-md disabled:opacity-40 transition-colors"
+                  className="px-4 py-1.5 bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-900 text-xs font-medium rounded-xl disabled:opacity-40 transition-colors"
                 >
                   Save Note
                 </button>
@@ -607,17 +611,17 @@ export function ProspectDetailModal({
 
               {/* Activity Log */}
               <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Activity Feed</h4>
-                <div className="space-y-2.5">
+                <h4 className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">Activity Feed</h4>
+                <div className="space-y-2">
                   {prospect.activities?.map((act) => (
                     <div key={act.id} className="flex items-start gap-3 text-xs">
-                      <span className="w-2 h-2 rounded-full bg-amber-400 mt-1.5 shrink-0" />
-                      <div className="flex-1 bg-[#121620] p-2.5 rounded border border-white/5">
+                      <span className="w-2 h-2 rounded-full bg-[#0071E3] mt-2 shrink-0" />
+                      <div className="flex-1 bg-neutral-50/70 dark:bg-white/[0.02] p-3 rounded-xl border border-black/[0.04] dark:border-white/[0.04]">
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-white capitalize">{act.event_type.replace('_', ' ')}</span>
-                          <span className="text-[10px] text-slate-400 font-mono">{new Date(act.created_at).toLocaleString()}</span>
+                          <span className="font-semibold text-neutral-900 dark:text-white capitalize">{act.event_type.replace('_', ' ')}</span>
+                          <span className="text-[10px] text-neutral-400 font-mono">{new Date(act.created_at).toLocaleString()}</span>
                         </div>
-                        <p className="text-slate-300 mt-1">{act.description}</p>
+                        <p className="text-neutral-600 dark:text-neutral-300 mt-1">{act.description}</p>
                       </div>
                     </div>
                   ))}

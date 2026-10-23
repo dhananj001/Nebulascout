@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   description: "Self-hosted AI-assisted prospect intelligence, research, and outreach CRM for NebulaStack.",
 };
 
+import { ThemeProvider } from "@/context/ThemeContext";
+
 export default function RootLayout({
   children,
 }: {
@@ -29,8 +31,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body suppressHydrationWarning className="min-h-full bg-[#090B0E] text-slate-100 font-sans">
-        <AppShell>{children}</AppShell>
+      <body suppressHydrationWarning className="min-h-full font-sans">
+        <ThemeProvider>
+          <AppShell>{children}</AppShell>
+        </ThemeProvider>
       </body>
     </html>
   );

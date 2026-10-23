@@ -3,18 +3,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
   Search, 
-  Filter, 
   Download, 
   Upload, 
-  Plus, 
   Globe, 
-  ChevronRight, 
+  ExternalLink,
   Clock, 
-  AlertCircle,
-  CheckCircle2,
-  Trash2,
   FileSpreadsheet,
-  Sparkles
+  Sparkles,
+  ChevronRight
 } from 'lucide-react';
 import { InstagramIcon } from '@/components/InstagramIcon';
 import { api, Prospect, Category } from '@/lib/api';
@@ -27,6 +23,8 @@ export default function ProspectsPage() {
   const [search, setSearch] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
   const [selectedStage, setSelectedStage] = useState<string>('');
+  const [sortBy, setSortBy] = useState<string>('created_at');
+  const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('desc');
   const [staleOnly, setStaleOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -47,7 +45,7 @@ export default function ProspectsPage() {
 
   useEffect(() => {
     loadProspects();
-  }, [search, selectedCategoryId, selectedStage, staleOnly, page]);
+  }, [search, selectedCategoryId, selectedStage, sortBy, sortDirection, staleOnly, page]);
 
   const loadProspects = async () => {
     setLoading(true);
@@ -56,6 +54,8 @@ export default function ProspectsPage() {
         search,
         category_id: selectedCategoryId || undefined,
         stage: selectedStage || undefined,
+        sort: sortBy,
+        direction: sortDirection,
         stale_only: staleOnly ? true : undefined,
         page,
         per_page: 25,
@@ -102,20 +102,27 @@ export default function ProspectsPage() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-white">Prospects Directory</h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Verified candidate businesses with source provenance, audit metrics, and outreach records.
+    <div className="py-10 px-8 max-w-7xl mx-auto space-y-7">
+      {/* Editorial Apple Header */}
+      <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-4 border-b border-black/[0.06] dark:border-white/[0.08] pb-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-white">
+              Prospects Directory
+            </h1>
+            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-neutral-200/70 dark:bg-white/10 text-neutral-700 dark:text-neutral-300">
+              {total} Total
+            </span>
+          </div>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 max-w-xl leading-relaxed">
+            Verified candidate businesses with social channels, bio links, website audits, and outreach dossiers.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setIsImportOpen(true)}
-            className="px-3 py-2 bg-white/5 hover:bg-white/10 text-slate-300 font-medium text-xs rounded-md border border-white/10 flex items-center gap-1.5 transition-colors"
+            className="px-3.5 py-1.5 bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.1] text-neutral-700 dark:text-neutral-300 font-medium text-xs rounded-xl flex items-center gap-1.5 transition-colors"
           >
             <Upload className="w-3.5 h-3.5" />
             <span>Import CSV</span>
@@ -123,7 +130,7 @@ export default function ProspectsPage() {
           <a
             href={api.getExportUrl(selectedStage, selectedCategoryId)}
             download
-            className="px-3 py-2 bg-white/5 hover:bg-white/10 text-slate-300 font-medium text-xs rounded-md border border-white/10 flex items-center gap-1.5 transition-colors"
+            className="px-3.5 py-1.5 bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.1] text-neutral-700 dark:text-neutral-300 font-medium text-xs rounded-xl flex items-center gap-1.5 transition-colors"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export CSV</span>
@@ -131,29 +138,18 @@ export default function ProspectsPage() {
         </div>
       </div>
 
-      {/* Token Optimization Status Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs">
-        <div className="flex items-center gap-2.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50 shrink-0" />
-          <span className="text-emerald-300 font-medium">
-            <strong>Token Saver Active:</strong> Discovery runs harvest leads with 0 AI tokens. Click <strong>&quot;AI Pitch&quot;</strong> on targets you actually want to approach.
-          </span>
-        </div>
-        <span className="text-[11px] font-mono text-emerald-400/80">Saves ~85% of Gemini API usage</span>
-      </div>
-
-      {/* Filter and Search Bar */}
-      <div className="p-4 rounded-xl bg-[#121620] border border-white/10 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[300px]">
+      {/* Filter and Search Bar - Clean Apple Card */}
+      <div className="p-3 rounded-2xl bg-white dark:bg-[#141416] border border-black/[0.06] dark:border-white/[0.08] shadow-sm flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[300px]">
           {/* Search */}
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+            <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-2.5" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search business, domain, or city..."
-              className="w-full bg-[#0B0D12] border border-white/10 rounded-md pl-9 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500"
+              placeholder="Search studio, @handle, website or city..."
+              className="w-full bg-neutral-50 dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.06] rounded-xl pl-9 pr-3 py-1.5 text-xs text-neutral-900 dark:text-white placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all"
             />
           </div>
 
@@ -161,7 +157,7 @@ export default function ProspectsPage() {
           <select
             value={selectedCategoryId}
             onChange={(e) => setSelectedCategoryId(e.target.value)}
-            className="bg-[#0B0D12] border border-white/10 rounded-md px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500"
+            className="bg-neutral-50 dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.06] rounded-xl px-3 py-1.5 text-xs text-neutral-700 dark:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all"
           >
             <option value="">All Categories</option>
             {categories.map((c) => (
@@ -173,9 +169,9 @@ export default function ProspectsPage() {
           <select
             value={selectedStage}
             onChange={(e) => setSelectedStage(e.target.value)}
-            className="bg-[#0B0D12] border border-white/10 rounded-md px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-500"
+            className="bg-neutral-50 dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.06] rounded-xl px-3 py-1.5 text-xs text-neutral-700 dark:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all"
           >
-            <option value="">All Stages</option>
+            <option value="">All Pipeline Stages</option>
             <option value="active_pipeline">Active Pipeline Only</option>
             <option value="discovered">Discovered</option>
             <option value="needs_review">Needs Review</option>
@@ -188,14 +184,31 @@ export default function ProspectsPage() {
             <option value="do_not_contact">Do Not Contact</option>
           </select>
 
+          {/* Timestamp & Score Sort Selector */}
+          <select
+            value={`${sortBy}:${sortDirection}`}
+            onChange={(e) => {
+              const [field, dir] = e.target.value.split(':');
+              setSortBy(field);
+              setSortDirection(dir as 'desc' | 'asc');
+            }}
+            className="bg-neutral-50 dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.06] rounded-xl px-3 py-1.5 text-xs text-neutral-700 dark:text-neutral-300 focus:outline-none focus:ring-2 focus:ring-[#0071E3]/20 focus:border-[#0071E3] transition-all"
+          >
+            <option value="created_at:desc">Newest Discovered First</option>
+            <option value="created_at:asc">Oldest Discovered First</option>
+            <option value="fit_score:desc">Highest Fit Score</option>
+            <option value="opportunity_score:desc">Highest Opportunity Score</option>
+            <option value="business_name:asc">Alphabetical (A-Z)</option>
+          </select>
+
           {/* Stale Filter Toggle */}
           <button
             type="button"
             onClick={() => setStaleOnly(!staleOnly)}
-            className={`px-2.5 py-1.5 rounded-md text-xs font-medium border flex items-center gap-1.5 transition-colors ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-medium border flex items-center gap-1.5 transition-colors ${
               staleOnly
-                ? 'bg-amber-500/20 border-amber-500 text-amber-300'
-                : 'border-white/10 text-slate-400 hover:text-white'
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-400 font-semibold'
+                : 'border-black/[0.06] dark:border-white/[0.06] bg-neutral-50/50 dark:bg-white/[0.02] text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
             }`}
           >
             <Clock className="w-3 h-3" />
@@ -203,130 +216,173 @@ export default function ProspectsPage() {
           </button>
         </div>
 
-        <div className="text-xs text-slate-400 font-mono">
-          Showing {prospects.length} of {total} prospects
+        <div className="text-[11px] text-neutral-400 dark:text-neutral-500 font-medium px-2">
+          Showing {prospects.length} of {total}
         </div>
       </div>
 
-      {/* Prospects Table */}
-      <div className="rounded-xl bg-[#121620] border border-white/10 overflow-hidden shadow-lg">
+      {/* Prospects Directory Table */}
+      <div className="rounded-2xl bg-white dark:bg-[#141416] border border-black/[0.06] dark:border-white/[0.08] overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#0B0D12] text-slate-400 uppercase font-mono text-[10px] border-b border-white/10">
+            <thead className="bg-neutral-50/70 dark:bg-white/[0.02] text-neutral-400 dark:text-neutral-500 font-medium text-[11px] border-b border-black/[0.06] dark:border-white/[0.06]">
               <tr>
-                <th className="py-3 px-4">Business & Category</th>
-                <th className="py-3 px-4">Channels</th>
-                <th className="py-3 px-4">Scores (Fit / Opp / Conf)</th>
-                <th className="py-3 px-4">Stage</th>
-                <th className="py-3 px-4">Audit Status</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+                <th className="py-3 px-5 font-medium">Studio / Business</th>
+                <th className="py-3 px-4 font-medium">Discovered</th>
+                <th className="py-3 px-4 font-medium">Direct Channels</th>
+                <th className="py-3 px-4 font-medium">Scores (Fit · Opp · Conf)</th>
+                <th className="py-3 px-4 font-medium">Stage</th>
+                <th className="py-3 px-4 font-medium">Audit Status</th>
+                <th className="py-3 px-5 text-right font-medium">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
-              {prospects.map((p) => (
-                <tr
-                  key={p.id}
-                  onClick={() => setSelectedProspectId(p.id)}
-                  className="hover:bg-white/5 cursor-pointer transition-colors group"
-                >
-                  <td className="py-3.5 px-4">
-                    <div className="font-semibold text-white group-hover:text-amber-400 transition-colors flex items-center gap-2">
-                      <span>{p.business_name}</span>
-                      {p.tags?.includes('Demo Data') && (
-                        <span className="text-[9px] px-1 rounded bg-slate-800 text-slate-400 border border-slate-700">Demo</span>
-                      )}
-                    </div>
-                    <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
-                      <span>{p.category?.name || 'Unassigned'}</span>
-                      {p.location && <span>· {p.location}</span>}
-                    </div>
-                  </td>
+            <tbody className="divide-y divide-black/[0.04] dark:divide-white/[0.04]">
+              {prospects.map((p) => {
+                const instagramUrl = p.instagram_url || (p.instagram_handle ? `https://instagram.com/${p.instagram_handle.replace(/^@/, '')}` : null);
+                const createdDate = p.created_at ? new Date(p.created_at) : null;
+                const formattedTime = createdDate ? createdDate.toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent';
+                
+                return (
+                  <tr
+                    key={p.id}
+                    onClick={() => setSelectedProspectId(p.id)}
+                    className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] cursor-pointer transition-colors group"
+                  >
+                    {/* Business & Category */}
+                    <td className="py-3.5 px-5">
+                      <div className="font-semibold text-neutral-900 dark:text-white group-hover:text-[#0071E3] dark:group-hover:text-[#2997FF] transition-colors flex items-center gap-2">
+                        <span>{p.business_name}</span>
+                        {p.tags?.includes('Demo Data') && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-neutral-200/70 dark:bg-white/10 text-neutral-600 dark:text-neutral-400">
+                            Demo
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[11px] text-neutral-400 dark:text-neutral-500 flex items-center gap-1.5 mt-0.5">
+                        <span>{p.category?.name || 'Studio'}</span>
+                        {p.location && <span>· {p.location}</span>}
+                      </div>
+                    </td>
 
-                  <td className="py-3.5 px-4 text-slate-300">
-                    <div className="flex items-center gap-2 text-xs">
-                      {p.normalized_domain && (
-                        <span className="flex items-center gap-1 text-slate-400">
-                          <Globe className="w-3 h-3 text-slate-500" />
-                          {p.normalized_domain}
-                        </span>
-                      )}
-                      {p.instagram_handle && (
-                        <span className="flex items-center gap-1 text-pink-400">
-                          <InstagramIcon className="w-3 h-3" />
-                          @{p.instagram_handle}
-                        </span>
-                      )}
-                    </div>
-                  </td>
+                    {/* Discovered Timestamp */}
+                    <td className="py-3.5 px-4 text-neutral-500 dark:text-neutral-400">
+                      <div className="flex items-center gap-1.5 text-[11px]">
+                        <Clock className="w-3 h-3 text-neutral-400 shrink-0" />
+                        <span className="whitespace-nowrap">{formattedTime}</span>
+                      </div>
+                    </td>
 
-                  <td className="py-3.5 px-4">
-                    <div className="flex items-center gap-1.5">
-                      <ScoreBadge label="Fit" score={p.fit_score} explanation={p.score_explanation?.fit_factors} />
-                      <ScoreBadge label="Opp" score={p.opportunity_score} explanation={p.score_explanation?.opportunity_factors} />
-                      <ScoreBadge label="Conf" score={p.confidence_score} explanation={p.score_explanation?.confidence_factors} />
-                    </div>
-                  </td>
+                    {/* Channels with Direct Clickable Links */}
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-2 text-xs">
+                        {/* Direct Instagram Link */}
+                        {instagramUrl && (
+                          <a
+                            href={instagramUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#E1306C]/10 text-[#E1306C] hover:bg-[#E1306C]/20 transition-all font-medium text-[11px] group/insta"
+                            title={`Open Instagram profile (@${p.instagram_handle}) directly in a new tab`}
+                          >
+                            <InstagramIcon className="w-3.5 h-3.5 text-[#E1306C]" />
+                            <span>@{p.instagram_handle?.replace(/^@/, '')}</span>
+                            <ExternalLink className="w-2.5 h-2.5 opacity-60 group-hover/insta:opacity-100 transition-opacity" />
+                          </a>
+                        )}
 
-                  <td className="py-3.5 px-4">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                      {p.stage.replace('_', ' ')}
-                    </span>
-                  </td>
+                        {/* Direct Website Link */}
+                        {p.primary_url && (
+                          <a
+                            href={p.primary_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-black/[0.04] dark:bg-white/[0.06] text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors text-[11px] group/web"
+                            title={`Visit website (${p.normalized_domain || p.primary_url})`}
+                          >
+                            <Globe className="w-3 h-3 text-neutral-400" />
+                            <span>{p.normalized_domain || 'Site'}</span>
+                            <ExternalLink className="w-2.5 h-2.5 opacity-40 group-hover/web:opacity-100 transition-opacity" />
+                          </a>
+                        )}
+                      </div>
+                    </td>
 
-                  <td className="py-3.5 px-4 text-slate-400">
-                    {p.latest_website_audit ? (
-                      <span className={`text-[11px] font-mono ${
-                        p.latest_website_audit.status === 'pass' ? 'text-emerald-400' : 'text-amber-400'
-                      }`}>
-                        {p.latest_website_audit.response_time_ms}ms · {p.latest_website_audit.alt_coverage_percent}% alt
+                    {/* Scores */}
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-1.5">
+                        <ScoreBadge label="Fit" score={p.fit_score} explanation={p.score_explanation?.fit_factors} />
+                        <ScoreBadge label="Opp" score={p.opportunity_score} explanation={p.score_explanation?.opportunity_factors} />
+                        <ScoreBadge label="Conf" score={p.confidence_score} explanation={p.score_explanation?.confidence_factors} />
+                      </div>
+                    </td>
+
+                    {/* Stage */}
+                    <td className="py-3.5 px-4">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-200/70 dark:bg-white/10 text-neutral-700 dark:text-neutral-300">
+                        {p.stage.replace('_', ' ')}
                       </span>
-                    ) : (
-                      <span className="text-[10px] text-slate-600 font-mono">Not Audited</span>
-                    )}
-                  </td>
+                    </td>
 
-                  <td className="py-3.5 px-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          setGeneratingId(p.id);
-                          try {
-                            await api.generateDraft(p.id, p.instagram_handle ? 'instagram_dm' : 'email');
-                            await loadProspects();
+                    {/* Audit Status */}
+                    <td className="py-3.5 px-4 text-neutral-500 dark:text-neutral-400">
+                      {p.latest_website_audit ? (
+                        <span className={`text-[11px] font-medium ${
+                          p.latest_website_audit.status === 'pass' ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
+                        }`}>
+                          {p.latest_website_audit.response_time_ms}ms · {p.latest_website_audit.alt_coverage_percent}% alt
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-neutral-400 dark:text-neutral-500">Not Audited</span>
+                      )}
+                    </td>
+
+                    {/* Actions */}
+                    <td className="py-3.5 px-5 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            setGeneratingId(p.id);
+                            try {
+                              await api.generateDraft(p.id, p.instagram_handle ? 'instagram_dm' : 'email');
+                              await loadProspects();
+                              setSelectedProspectId(p.id);
+                            } catch (err: any) {
+                              alert(err.message || 'Failed to generate draft');
+                            } finally {
+                              setGeneratingId(null);
+                            }
+                          }}
+                          disabled={generatingId === p.id}
+                          className="px-2.5 py-1 text-[11px] font-medium text-neutral-800 dark:text-neutral-200 hover:text-white bg-black/[0.04] hover:bg-neutral-900 dark:bg-white/[0.06] dark:hover:bg-white dark:hover:text-neutral-900 rounded-lg transition-all flex items-center gap-1 shadow-xs disabled:opacity-50"
+                          title="Generate personalized pitch on-demand"
+                        >
+                          <Sparkles className={`w-3 h-3 text-[#0071E3] dark:text-[#2997FF] ${generatingId === p.id ? 'animate-spin' : ''}`} />
+                          <span>{generatingId === p.id ? 'Drafting...' : 'AI Pitch'}</span>
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setSelectedProspectId(p.id);
-                          } catch (err: any) {
-                            alert(err.message || 'Failed to generate draft');
-                          } finally {
-                            setGeneratingId(null);
-                          }
-                        }}
-                        disabled={generatingId === p.id}
-                        className="px-2.5 py-1 text-[11px] font-semibold text-pink-300 hover:text-white bg-pink-500/10 hover:bg-pink-500/20 rounded border border-pink-500/20 transition-all flex items-center gap-1 shadow-sm disabled:opacity-50"
-                        title="Generate personalized pitch on-demand (preserves tokens)"
-                      >
-                        <Sparkles className={`w-3 h-3 text-pink-400 ${generatingId === p.id ? 'animate-spin' : ''}`} />
-                        <span>{generatingId === p.id ? 'Thinking...' : 'AI Pitch'}</span>
-                      </button>
-
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedProspectId(p.id);
-                        }}
-                        className="px-2.5 py-1 text-xs text-slate-400 group-hover:text-white bg-white/5 hover:bg-white/10 rounded border border-white/5 transition-colors"
-                      >
-                        Inspect
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                          }}
+                          className="px-2.5 py-1 text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-black/[0.04] dark:hover:bg-white/[0.06] rounded-lg transition-colors flex items-center gap-0.5"
+                        >
+                          <span>Inspect</span>
+                          <ChevronRight className="w-3 h-3 text-neutral-400" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
 
               {prospects.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-xs text-slate-400">
-                    No prospects match the current criteria.
+                  <td colSpan={7} className="py-14 text-center text-xs text-neutral-400 dark:text-neutral-500">
+                    No studio prospects found matching your current filters.
                   </td>
                 </tr>
               )}
@@ -337,34 +393,34 @@ export default function ProspectsPage() {
 
       {/* CSV Import Modal */}
       {isImportOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-[#121620] border border-white/10 rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <div className="flex items-center gap-2 text-white font-semibold text-sm">
-                <FileSpreadsheet className="w-4 h-4 text-amber-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-[#18181B] border border-black/[0.08] dark:border-white/[0.08] rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.06]">
+              <div className="flex items-center gap-2 text-neutral-900 dark:text-white font-semibold text-sm">
+                <FileSpreadsheet className="w-4 h-4 text-[#0071E3] dark:text-[#2997FF]" />
                 <span>Import Prospects via CSV</span>
               </div>
-              <button onClick={() => setIsImportOpen(false)} className="text-slate-400 hover:text-white">✕</button>
+              <button onClick={() => setIsImportOpen(false)} className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white">✕</button>
             </div>
 
             <form onSubmit={handleImportSubmit} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-300 font-medium mb-1">Select CSV File</label>
+                <label className="block text-neutral-700 dark:text-neutral-300 font-medium mb-1">Select CSV File</label>
                 <input
                   type="file"
                   accept=".csv,.txt"
                   ref={fileInputRef}
                   onChange={(e) => setImportFile(e.target.files?.[0] || null)}
                   required
-                  className="w-full text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border-0 file:text-xs file:bg-amber-500 file:text-slate-950 font-mono"
+                  className="w-full text-neutral-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:bg-neutral-900 dark:file:bg-white file:text-white dark:file:text-neutral-900 font-medium cursor-pointer"
                 />
-                <p className="text-[11px] text-slate-400 mt-1">
+                <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-1">
                   Supports headers: business_name / name, website / url, instagram / handle, location, phone, email.
                 </p>
               </div>
 
               {importResult && (
-                <div className={`p-3 rounded-lg text-xs ${importResult.error ? 'bg-rose-500/10 text-rose-300' : 'bg-emerald-500/10 text-emerald-300'}`}>
+                <div className={`p-3 rounded-xl text-xs ${importResult.error ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300' : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'}`}>
                   {importResult.error ? (
                     <span>Error: {importResult.error}</span>
                   ) : (
@@ -377,14 +433,14 @@ export default function ProspectsPage() {
                 <button
                   type="button"
                   onClick={() => setIsImportOpen(false)}
-                  className="px-3 py-1.5 text-slate-400 hover:text-white"
+                  className="px-3.5 py-1.5 text-neutral-500 hover:text-neutral-900 dark:hover:text-white"
                 >
-                  Close
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={importing || !importFile}
-                  className="px-4 py-1.5 bg-amber-500 text-slate-950 font-bold rounded disabled:opacity-50"
+                  className="px-4 py-1.5 bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-100 text-white dark:text-neutral-950 font-medium rounded-xl shadow-xs disabled:opacity-50"
                 >
                   {importing ? 'Importing...' : 'Upload & Deduplicate'}
                 </button>

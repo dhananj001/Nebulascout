@@ -8,18 +8,18 @@ interface ScoreBadgeProps {
 }
 
 export function ScoreBadge({ label, score, explanation, size = 'sm' }: ScoreBadgeProps) {
-  let colorClasses = 'border-slate-700 bg-slate-900/60 text-slate-300';
-  let dotColor = 'bg-slate-400';
+  let colorClasses = 'border-black/[0.08] dark:border-white/[0.08] bg-black/[0.03] dark:bg-white/[0.04] text-neutral-700 dark:text-neutral-300';
+  let dotColor = 'bg-neutral-400';
 
   if (score >= 75) {
-    colorClasses = 'border-emerald-500/30 bg-emerald-950/40 text-emerald-300';
-    dotColor = 'bg-emerald-400';
+    colorClasses = 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400';
+    dotColor = 'bg-emerald-500';
   } else if (score >= 50) {
-    colorClasses = 'border-amber-500/30 bg-amber-950/40 text-amber-300';
-    dotColor = 'bg-amber-400';
+    colorClasses = 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400';
+    dotColor = 'bg-amber-500';
   } else if (score > 0) {
-    colorClasses = 'border-rose-500/30 bg-rose-950/40 text-rose-300';
-    dotColor = 'bg-rose-400';
+    colorClasses = 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-400';
+    dotColor = 'bg-rose-500';
   }
 
   const sizeClasses = size === 'lg' 
