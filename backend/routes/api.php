@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AnalyticsController;
 use App\Http\Controllers\Api\V1\CategoryPlaybookController;
+use App\Http\Controllers\Api\V1\DailySprintController;
 use App\Http\Controllers\Api\V1\FollowUpController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\OutreachController;
@@ -52,4 +53,12 @@ Route::prefix('v1')->group(function () {
     Route::put('/playbooks/{id}', [CategoryPlaybookController::class, 'update']);
     Route::get('/playbooks/{id}/export', [CategoryPlaybookController::class, 'exportPlaybook']);
     Route::post('/playbooks/import', [CategoryPlaybookController::class, 'importPlaybook']);
+
+    // Daily Sprint (Manual Outreach Reporting & Follow-Up Tracking)
+    Route::get('/sprint/today', [DailySprintController::class, 'getToday']);
+    Route::post('/sprint/target', [DailySprintController::class, 'updateTarget']);
+    Route::post('/sprint/log-reachout', [DailySprintController::class, 'logReachout']);
+    Route::post('/sprint/record-reply', [DailySprintController::class, 'recordReply']);
+    Route::post('/sprint/log-followup', [DailySprintController::class, 'logFollowUpSent']);
+    Route::delete('/sprint/items/{id}', [DailySprintController::class, 'deleteItem']);
 });

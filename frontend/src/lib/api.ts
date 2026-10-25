@@ -392,4 +392,115 @@ export const api = {
     body: JSON.stringify(data),
   }),
   exportPlaybook: (id: number | string) => request<CategoryPlaybook>(`/playbooks/${id}/export`),
+
+  // Daily Sprint (Manual Outreach Reporting & Follow-Up Tracking)
+  getSprintToday: () => request<SprintResponse>('/sprint/today'),
+  updateSprintTarget: (data: {
+    target_count: number;
+    target_niche?: string;
+  }) => request<SprintResponse>('/sprint/target', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  logReachout: (data: {
+    business_name: string;
+    channel: string;
+    contact_handle?: string;
+    website_url?: string;
+    pitch_notes?: string;
+    category_name?: string;
+    schedule_follow_up_days?: number;
+    follow_up_reason?: string;
+  }) => request<SprintResponse>('/sprint/log-reachout', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  recordSprintReply: (data: {
+    prospect_id: number;
+    reply_sentiment: string;
+    reply_text?: string;
+    next_follow_up_days?: number;
+    next_follow_up_reason?: string;
+  }) => request<SprintResponse>('/sprint/record-reply', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  logSprintFollowUpSent: (data: {
+    follow_up_id: number;
+    channel: string;
+    sent_text?: string;
+    next_follow_up_days?: number;
+  }) => request<SprintResponse>('/sprint/log-followup', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  deleteSprintItem: (id: number) => request<SprintResponse>(`/sprint/items/${id}`, {
+    method: 'DELETE',
+  }),
 };
+
+export interface DailySprintItem {
+  id: number;
+  daily_sprint_id: number;
+  prospect_id: number;
+  sort_order: number;
+  status: 'pending' | 'completed' | 'skipped';
+  preferred_channel: string;
+  skip_reason: string | null;
+  completed_at: string | null;
+  prospect: Prospect;
+}
+
+export interface DailySprint {
+  id: number;
+  sprint_date: string;
+  target_count: number;
+  completed_count: number;
+  target_niche: string | null;
+  status: 'not_started' | 'in_progress' | 'completed' | 'paused';
+  streak_count: number;
+  progress_percent: number;
+  started_at: string | null;
+  completed_at: string | null;
+  items: DailySprintItem[];
+}
+
+export interface SprintMilestone {
+  label: string;
+  threshold: number;
+  unlocked: boolean;
+}
+
+export interface SprintCalendarDay {
+  date: string;
+  day_label: string;
+  day_num: string;
+  is_today: boolean;
+  target_count: number;
+  completed_count: number;
+  achieved: boolean;
+  has_activity: boolean;
+}
+
+export interface SprintResponse {
+  sprint: DailySprint;
+  stats: {
+    target_count: number;
+    completed_count: number;
+    progress_percent: number;
+    streak_count: number;
+    replied_count: number;
+    due_follow_ups_count: number;
+    milestones: {
+      bronze: SprintMilestone;
+      silver: SprintMilestone;
+      gold: SprintMilestone;
+    };
+  };
+  follow_ups: {
+    due_today: FollowUp[];
+    upcoming: FollowUp[];
+  };
+  calendar: SprintCalendarDay[];
+}
+

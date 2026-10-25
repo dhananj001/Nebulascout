@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 120" width="100%" height="100%">
+  <defs>
+    <!-- Needle Gradients -->
+    <linearGradient id="needleNorth1" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0052CC"/>
+      <stop offset="60%" stop-color="#0071E3"/>
+      <stop offset="100%" stop-color="#38BDF8"/>
+    </linearGradient>
+    <linearGradient id="needleSouth1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0071E3"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+    <linearGradient id="stemGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2D3748"/>
+      <stop offset="100%" stop-color="#1A202C"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Group: Symbol Mark (Needle-N Scout Monogram) -->
+  <g transform="translate(18, 12)">
+    <!-- Left Vertical Stem of N -->
+    <path d="M 12 18 L 28 18 L 28 78 L 12 78 Z" fill="url(#stemGrad1)" rx="2"/>
+
+    <!-- Right Vertical Stem of N -->
+    <path d="M 64 18 L 80 18 L 80 78 L 64 78 Z" fill="url(#stemGrad1)" rx="2"/>
+
+    <!-- Connecting Back shadow anchor of N -->
+    <path d="M 28 62 L 64 34 L 64 48 L 28 76 Z" fill="#0F172A" opacity="0.85"/>
+
+    <!-- Dynamic Scout Compass Needle (Diagonal Ray slicing NE to SW) -->
+    <polygon points="46,48 92,6 46,38" fill="url(#needleNorth1)"/>
+    <polygon points="46,48 46,38 2,90" fill="#0284C7"/>
+    <polygon points="46,48 2,90 46,58" fill="url(#needleSouth1)"/>
+    <polygon points="46,48 46,58 92,6" fill="#38BDF8"/>
+
+    <!-- Central Precision Aperture Pivot Core -->
+    <circle cx="46" cy="48" r="5" fill="#FFFFFF"/>
+    <circle cx="46" cy="48" r="2.5" fill="#0071E3"/>
+    
+    <!-- Subtle Target Ring Crosshair -->
+    <circle cx="46" cy="48" r="38" fill="none" stroke="#0071E3" stroke-width="1.5" stroke-dasharray="4 6" opacity="0.35"/>
+  </g>
+
+  <!-- Group: Typography - Perfectly Proportioned & Justified Symmetry -->
+  <g transform="translate(142, 0)">
+    <!-- Main Headline: NebulaScout -->
+    <text x="0" y="66" 
+          font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif" 
+          font-size="44" 
+          font-weight="700" 
+          letter-spacing="-1" 
+          fill="#1D1D1F">
+      Nebula<tspan fill="#0071E3">Scout</tspan>
+    </text>
+
+    <!-- Subtitle: Full Geometric Width Symmetry (Edge-to-edge justification with NebulaScout) -->
+    <!-- Length of 'NebulaScout' at 44px with -1px letter-spacing is ~262px -->
+    <text x="2" y="86" 
+          font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif" 
+          font-size="10" 
+          font-weight="600" 
+          letter-spacing="5.6" 
+          fill="#64748B"
+          textLength="258"
+          lengthAdjust="spacing">
+      PROSPECT INTELLIGENCE
+    </text>
+
+    <!-- Hairline Accent Horizon (Anchor rule) -->
+    <line x1="2" y1="94" x2="260" y2="94" stroke="#0071E3" stroke-width="1.5" stroke-linecap="round" opacity="0.25"/>
+  </g>
+</svg>
